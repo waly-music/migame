@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CellWars</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ── Start / Death Screen ───────────────────────────────────────────── -->
+  <div id="startScreen">
+    <div class="start-panel">
+      <div class="logo">
+        <span class="logo-cell"></span>
+        CellWars
+      </div>
+      <p id="deathMessage" class="death-msg"></p>
+      <div class="input-row">
+        <input id="nicknameInput" type="text" placeholder="Tu nombre de célula…" maxlength="20" autocomplete="off">
+        <button id="startBtn">▶ Jugar</button>
+      </div>
+      <ul class="tips">
+        <li>🖱️ Mueve el ratón para moverte</li>
+        <li>🍕 Come comida para crecer</li>
+        <li>💀 Evita células más grandes que tú</li>
+        <li>👑 Sé el más grande del servidor</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── HUD ────────────────────────────────────────────────────────────── -->
+  <div id="hud">
+    <div id="massDisplay" class="hud-pill">Mass: 10</div>
+    <div id="scoreDisplay" class="hud-pill">Score: 0</div>
+  </div>
+
+  <div id="leaderboard">
+    <div class="lb-title">🏆 Top 10</div>
+    <ol id="leaderboardList"></ol>
+  </div>
+
+  <div id="minimap">
+    <canvas id="minimapCanvas" width="140" height="140"></canvas>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
