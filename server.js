@@ -384,5 +384,8 @@ function pongTick(roomId){
 function pongReset(room,dir){Object.assign(room.ball,pongNewBall(dir));}
 
 // ════════════════════════════════════════════════════════════════════════════
+// VERITY  /verity
+require('./verity-server')(io);
+
 const PORT=process.env.PORT||3000;
 server.listen(PORT,()=>console.log(`\n  🟢  GameHub → http://localhost:${PORT}\n`));

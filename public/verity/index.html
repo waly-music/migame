@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VERITY — El juego de los secretos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0608;--surface:#12090d;--surface2:#1a0f14;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);
+  --text:#e8dde4;--muted:rgba(232,221,228,.45);--hint:rgba(232,221,228,.25);
+  --accent:#c9a0b8;--danger:#e05c6e;--gold:#d4a853;--verity:#8b3a52;
+  --inv:#3a6b8b;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+/* noise texture overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+.wrap{position:relative;z-index:1;width:100%;max-width:640px;padding:24px 16px 48px;display:flex;flex-direction:column;align-items:center;gap:0}
+
+/* ── Header ── */
+.header{text-align:center;padding:32px 0 24px}
+.logo{font-family:'Playfair Display',serif;font-size:44px;font-style:italic;color:var(--text);letter-spacing:2px;margin-bottom:4px}
+.logo span{color:var(--accent)}
+.tagline{font-size:13px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+a.back{display:block;font-size:12px;color:var(--hint);text-decoration:none;margin-bottom:20px;align-self:flex-start}
+a.back:hover{color:var(--accent)}
+
+/* ── Panels ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;margin-bottom:16px}
+.panel-title{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:16px;color:var(--text)}
+
+/* ── Inputs ── */
+input,textarea{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;outline:none;width:100%;resize:none;transition:border-color .2s}
+input:focus,textarea:focus{border-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--hint)}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:10px;padding:13px 20px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s,transform .1s;letter-spacing:.02em}
+.btn:hover{opacity:.88}.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:#0a0608}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:8px 16px;font-size:13px;width:auto}
+
+/* ── Room code ── */
+.room-code{font-family:'Playfair Display',serif;font-size:36px;letter-spacing:8px;color:var(--accent);text-align:center;padding:12px 0}
+.code-label{font-size:11px;color:var(--hint);text-align:center;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+
+/* ── Player list ── */
+.player-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.player-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px;font-size:13px}
+.player-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.player-crown{font-size:14px;margin-left:auto}
+
+/* ── Scenario card ── */
+.scenario-card{background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+.scenario-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.scenario-text{font-family:'Playfair Display',serif;font-size:17px;line-height:1.6;color:var(--text);font-style:italic;margin-bottom:8px}
+.scenario-hint{font-size:11px;color:var(--hint);letter-spacing:.06em;text-transform:uppercase}
+
+/* ── Role badge ── */
+.role-badge{padding:14px 18px;border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:16px;font-weight:500}
+.role-verity{background:rgba(139,58,82,.2);border:1px solid rgba(139,58,82,.5);color:#e8a0b0}
+.role-inv{background:rgba(58,107,139,.2);border:1px solid rgba(58,107,139,.5);color:#a0c8e8}
+
+/* ── Timer ── */
+.timer-wrap{margin-bottom:16px}
+.timer-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+.timer-track{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.timer-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 1s linear}
+
+/* ── Answer cards ── */
+.answers-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.answer-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
+.answer-card:hover{border-color:var(--accent);background:rgba(201,160,184,.06)}
+.answer-card.voted{border-color:var(--accent);background:rgba(201,160,184,.1)}
+.answer-card.voted::after{content:'✓ Tu voto';position:absolute;top:10px;right:12px;font-size:10px;color:var(--accent);font-weight:600}
+.answer-name{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px;letter-spacing:.04em}
+.answer-text{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;line-height:1.6;color:var(--text)}
+
+/* ── Reveal ── */
+.reveal-verity{background:rgba(139,58,82,.15);border:1px solid rgba(139,58,82,.4);border-radius:14px;padding:20px;text-align:center;margin-bottom:16px}
+.reveal-title{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:4px}
+.reveal-sub{font-size:13px;color:var(--muted)}
+.votes-list{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.vote-item{display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px}
+.vote-correct{color:#7ec87e}.vote-wrong{color:rgba(232,221,228,.35)}
+.scores-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.score-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px;font-size:13px}
+.score-item:first-child{background:rgba(212,168,83,.1);border:1px solid rgba(212,168,83,.25);color:var(--gold)}
+.score-pts{font-family:'Playfair Display',serif;font-size:16px;font-weight:700}
+
+/* ── Status msg ── */
+.status-msg{font-size:13px;color:var(--muted);text-align:center;min-height:18px;margin-top:8px}
+.err-msg{color:var(--danger)}
+
+/* ── Char count ── */
+.char-count{font-size:11px;color:var(--hint);text-align:right;margin-top:4px}
+
+/* ── Waiting ── */
+.waiting-anim{display:flex;gap:6px;justify-content:center;padding:16px 0}
+.dot-anim{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:dotPulse 1.4s ease-in-out infinite}
+.dot-anim:nth-child(2){animation-delay:.2s}.dot-anim:nth-child(3){animation-delay:.4s}
+@keyframes dotPulse{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.3);opacity:1}}
+
+/* ── Util ── */
+.hidden{display:none!important}
+.flex-gap{display:flex;gap:10px}
+.mt8{margin-top:8px}
+.round-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(201,160,184,.12);color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+.center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Menú principal</a>
+
+  <!-- ── LOBBY ── -->
+  <div id="screen-lobby">
+    <div class="header">
+      <div class="logo">V<span>E</span>RITY</div>
+      <div class="tagline">El juego de los secretos · 3-8 jugadores</div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">Unirse o crear sala</p>
+      <input id="nick" type="text" placeholder="Tu nombre…" maxlength="18" autocomplete="off" style="margin-bottom:10px">
+      <button class="btn btn-primary" id="createBtn" style="margin-bottom:8px">+ Crear sala</button>
+      <div class="flex-gap">
+        <input id="codeInput" type="text" placeholder="Código de sala…" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-family:'Playfair Display',serif;font-size:18px">
+        <button class="btn btn-ghost btn-sm" id="joinBtn" style="white-space:nowrap">Unirse</button>
+      </div>
+      <p class="status-msg err-msg" id="lobbyErr"></p>
+    </div>
+    <div class="panel" style="font-size:13px;color:var(--muted);line-height:1.7">
+      <p class="panel-title" style="font-size:15px">¿Cómo se juega?</p>
+      Un jugador es <strong style="color:#e8a0b0">VERITY</strong> — solo ellos lo saben. Deben mentir en su respuesta al escenario. Los demás son <strong style="color:#a0c8e8">investigadores</strong> y responden con honestidad. Todos votan quién creen que es Verity. Si te descubren, pierdes. Si engañas a todos, ganas.
+    </div>
+  </div>
+
+  <!-- ── WAITING ROOM ── -->
+  <div id="screen-waiting" class="hidden" style="width:100%">
+    <div class="header">
+      <div class="logo">V<span>E</span>RITY</div>
+    </div>
+    <div class="panel">
+      <p class="code-label">Código de sala — comparte con tus amigos</p>
+      <div class="room-code" id="roomCodeDisplay"></div>
+      <ul class="player-list" id="waitingPlayerList" style="margin-top:16px"></ul>
+      <p style="font-size:12px;color:var(--hint);text-align:center;margin-top:12px">Mínimo 3 jugadores para iniciar</p>
+    </div>
+    <button class="btn btn-primary hidden" id="startGameBtn">▶ Iniciar partida</button>
+    <p class="status-msg" id="waitingMsg">Esperando jugadores…</p>
+  </div>
+
+  <!-- ── ANSWERING ── -->
+  <div id="screen-answering" class="hidden" style="width:100%">
+    <div class="header" style="padding:20px 0 16px">
+      <div class="logo" style="font-size:28px">V<span>E</span>RITY</div>
+    </div>
+    <div class="round-badge" id="roundBadge">Ronda 1 / 5</div>
+    <div class="scenario-card">
+      <div class="scenario-text" id="scenarioText"></div>
+      <div class="scenario-hint" id="scenarioHint"></div>
+    </div>
+    <div class="role-badge" id="roleBadge"></div>
+    <div class="timer-wrap">
+      <div class="timer-label"><span>Tiempo para responder</span><span id="timerAns">60s</span></div>
+      <div class="timer-track"><div class="timer-fill" id="timerBarAns" style="width:100%"></div></div>
+    </div>
+    <textarea id="answerInput" rows="4" placeholder="Escribe tu respuesta aquí…" maxlength="280"></textarea>
+    <div class="char-count"><span id="charCount">0</span>/280</div>
+    <button class="btn btn-primary mt8" id="submitAnswerBtn">Enviar respuesta</button>
+    <p class="status-msg" id="answerStatus"></p>
+    <div class="waiting-anim hidden" id="waitingAnswers">
+      <div class="dot-anim"></div><div class="dot-anim"></div><div class="dot-anim"></div>
+    </div>
+  </div>
+
+  <!-- ── VOTING ── -->
+  <div id="screen-voting" class="hidden" style="width:100%">
+    <div class="header" style="padding:16px 0 12px">
+      <div class="logo" style="font-size:26px">V<span>E</span>RITY</div>
+      <div class="tagline">¿Quién está mintiendo?</div>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-label"><span>Tiempo para votar</span><span id="timerVote">45s</span></div>
+      <div class="timer-track"><div class="timer-fill" id="timerBarVote" style="width:100%"></div></div>
+    </div>
+    <div class="answers-grid" id="answersGrid"></div>
+    <p class="status-msg" id="voteStatus"></p>
+    <div class="waiting-anim hidden" id="waitingVotes">
+      <div class="dot-anim"></div><div class="dot-anim"></div><div class="dot-anim"></div>
+    </div>
+  </div>
+
+  <!-- ── REVEAL ── -->
+  <div id="screen-reveal" class="hidden" style="width:100%">
+    <div class="header" style="padding:20px 0 16px">
+      <div class="logo" style="font-size:28px">V<span>E</span>RITY</div>
+    </div>
+    <div class="reveal-verity" id="revealCard">
+      <div class="reveal-title" id="revealTitle"></div>
+      <div class="reveal-sub" id="revealSub"></div>
+    </div>
+    <div class="panel" style="margin-bottom:12px">
+      <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Lo que escribió Verity</p>
+      <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:15px;line-height:1.6;color:var(--text)" id="verityAnswerReveal"></div>
+    </div>
+    <div class="panel" style="margin-bottom:12px">
+      <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Votos emitidos</p>
+      <div class="votes-list" id="votesList"></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px">
+      <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Puntuaciones</p>
+      <ul class="scores-list" id="revealScores"></ul>
+    </div>
+    <button class="btn btn-primary hidden" id="nextRoundBtn">→ Siguiente ronda</button>
+    <button class="btn btn-primary hidden" id="endGameBtn">Ver resultado final</button>
+    <p class="status-msg" id="revealMsg">Esperando al anfitrión…</p>
+  </div>
+
+  <!-- ── GAME OVER ── -->
+  <div id="screen-gameover" class="hidden" style="width:100%">
+    <div class="header">
+      <div class="logo">V<span>E</span>RITY</div>
+      <div class="tagline">Fin del juego</div>
+    </div>
+    <div class="panel center" style="margin-bottom:16px">
+      <div style="font-size:40px;margin-bottom:8px">🏆</div>
+      <div class="panel-title" id="winnerName" style="font-size:22px"></div>
+      <p style="font-size:13px;color:var(--muted);margin-top:4px">gana con más puntos</p>
+    </div>
+    <ul class="scores-list" id="finalScores" style="margin-bottom:20px"></ul>
+    <button class="btn btn-primary" onclick="location.reload()">Jugar de nuevo</button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io('/verity');
+let myId = null, myRoomId = null, isHost = false, myVote = null;
+let timerInterval = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function show(id) {
+  ['screen-lobby','screen-waiting','screen-answering','screen-voting','screen-reveal','screen-gameover']
+    .forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+}
+function startTimer(totalSec, barId, labelId, onEnd) {
+  clearInterval(timerInterval);
+  let remaining = totalSec;
+  const bar = document.getElementById(barId);
+  const label = document.getElementById(labelId);
+  bar.style.width = '100%';
+  bar.style.transition = 'none';
+  label.textContent = remaining + 's';
+  setTimeout(() => {
+    bar.style.transition = 'width 1s linear';
+    timerInterval = setInterval(() => {
+      remaining--;
+      if (remaining < 0) { clearInterval(timerInterval); if (onEnd) onEnd(); return; }
+      bar.style.width = (remaining / totalSec * 100) + '%';
+      label.textContent = remaining + 's';
+      if (remaining <= 10) bar.style.background = 'var(--danger)';
+      else bar.style.background = 'var(--accent)';
+    }, 1000);
+  }, 50);
+}
+
+// ── Lobby ─────────────────────────────────────────────────────────────────────
+document.getElementById('createBtn').onclick = () => {
+  const n = document.getElementById('nick').value.trim();
+  if (!n) { document.getElementById('lobbyErr').textContent = 'Escribe tu nombre'; return; }
+  socket.emit('createRoom', { name: n });
+  isHost = true;
+};
+document.getElementById('joinBtn').onclick = () => {
+  const n = document.getElementById('nick').value.trim();
+  const code = document.getElementById('codeInput').value.toUpperCase().trim();
+  if (!n) { document.getElementById('lobbyErr').textContent = 'Escribe tu nombre'; return; }
+  if (!code) { document.getElementById('lobbyErr').textContent = 'Escribe el código de sala'; return; }
+  socket.emit('joinRoom', { name: n, roomId: code });
+};
+document.getElementById('nick').onkeydown = e => { if (e.key === 'Enter') document.getElementById('createBtn').click(); };
+
+socket.on('roomCreated', ({ roomId }) => {
+  myRoomId = roomId;
+  document.getElementById('roomCodeDisplay').textContent = roomId;
+  document.getElementById('startGameBtn').classList.remove('hidden');
+  show('screen-waiting');
+});
+
+socket.on('err', msg => {
+  document.getElementById('lobbyErr').textContent = msg;
+});
+
+socket.on('lobby', ({ players, hostId, roomId }) => {
+  myRoomId = roomId;
+  document.getElementById('roomCodeDisplay').textContent = roomId;
+  if (document.getElementById('screen-lobby').classList.contains('hidden') === false) {
+    show('screen-waiting');
+  }
+  if (hostId === myId) {
+    document.getElementById('startGameBtn').classList.remove('hidden');
+    document.getElementById('waitingMsg').textContent = players.length >= 3 ? '¡Listo para iniciar!' : 'Esperando jugadores…';
+  }
+  document.getElementById('waitingPlayerList').innerHTML = players.map(p =>
+    `<li class="player-item"><span class="player-dot"></span>${p.name}${p.id === hostId ? '<span class="player-crown">👑</span>' : ''}</li>`
+  ).join('');
+});
+
+document.getElementById('startGameBtn').onclick = () => socket.emit('startGame');
+
+// ── Answer phase ─────────────────────────────────────────────────────────────
+socket.on('roundStart', ({ round, totalRounds, scenario, hint, timeLimit }) => {
+  myVote = null;
+  document.getElementById('roundBadge').textContent = `Ronda ${round} / ${totalRounds}`;
+  document.getElementById('scenarioText').textContent = scenario;
+  document.getElementById('scenarioHint').textContent = hint;
+  document.getElementById('answerInput').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('answerStatus').textContent = '';
+  document.getElementById('submitAnswerBtn').disabled = false;
+  document.getElementById('submitAnswerBtn').classList.remove('hidden');
+  document.getElementById('waitingAnswers').classList.add('hidden');
+  show('screen-answering');
+  startTimer(timeLimit, 'timerBarAns', 'timerAns');
+});
+
+socket.on('secretRole', ({ isVerity, hint }) => {
+  const badge = document.getElementById('roleBadge');
+  badge.className = 'role-badge ' + (isVerity ? 'role-verity' : 'role-inv');
+  badge.textContent = hint;
+});
+
+document.getElementById('answerInput').oninput = function() {
+  document.getElementById('charCount').textContent = this.value.length;
+};
+
+document.getElementById('submitAnswerBtn').onclick = () => {
+  const ans = document.getElementById('answerInput').value.trim();
+  if (!ans) return;
+  socket.emit('submitAnswer', { answer: ans });
+  document.getElementById('submitAnswerBtn').classList.add('hidden');
+  document.getElementById('waitingAnswers').classList.remove('hidden');
+  document.getElementById('answerStatus').textContent = 'Respuesta enviada. Esperando a los demás…';
+};
+
+socket.on('answerCount', ({ count, total }) => {
+  document.getElementById('answerStatus').textContent = `${count}/${total} jugadores han respondido…`;
+});
+
+// ── Voting phase ─────────────────────────────────────────────────────────────
+socket.on('votingStart', ({ answers, timeLimit }) => {
+  clearInterval(timerInterval);
+  const grid = document.getElementById('answersGrid');
+  grid.innerHTML = answers.map(a =>
+    `<div class="answer-card" id="ans-${a.playerId}" onclick="castVote('${a.playerId}',this)">
+      <div class="answer-name">${a.playerName}</div>
+      <div class="answer-text">"${a.text}"</div>
+    </div>`
+  ).join('');
+  document.getElementById('voteStatus').textContent = 'Haz click en la respuesta que crees que es VERITY';
+  document.getElementById('waitingVotes').classList.add('hidden');
+  show('screen-voting');
+  startTimer(timeLimit, 'timerBarVote', 'timerVote');
+});
+
+function castVote(playerId, el) {
+  if (myVote) return;
+  myVote = playerId;
+  el.classList.add('voted');
+  socket.emit('submitVote', { targetId: playerId });
+  document.getElementById('voteStatus').textContent = 'Voto enviado. Esperando a los demás…';
+  document.getElementById('waitingVotes').classList.remove('hidden');
+}
+
+socket.on('voteCount', ({ count, total }) => {
+  document.getElementById('voteStatus').textContent = `${count}/${total} jugadores han votado…`;
+});
+
+// ── Reveal ────────────────────────────────────────────────────────────────────
+socket.on('roundReveal', ({ verityId, verityName, verityFound, verityAnswer, voteSummary, scores, isLastRound }) => {
+  clearInterval(timerInterval);
+  const card = document.getElementById('revealCard');
+  card.style.background = verityFound ? 'rgba(58,107,139,.15)' : 'rgba(139,58,82,.15)';
+  card.style.borderColor = verityFound ? 'rgba(58,107,139,.4)' : 'rgba(139,58,82,.4)';
+  document.getElementById('revealTitle').textContent = verityFound ? `🔍 ¡Descubierto! ${verityName} era VERITY` : `🎭 VERITY escapó — ${verityName} engañó a todos`;
+  document.getElementById('revealSub').textContent = verityFound ? 'Los investigadores ganan esta ronda (+100 pts c/u)' : 'VERITY gana esta ronda (+150 pts)';
+  document.getElementById('verityAnswerReveal').textContent = `"${verityAnswer}"`;
+
+  document.getElementById('votesList').innerHTML = voteSummary.map(v =>
+    `<div class="vote-item"><span>${v.voterName} votó a ${v.targetName}</span><span class="${v.correct ? 'vote-correct' : 'vote-wrong'}">${v.correct ? '✓' : '✗'}</span></div>`
+  ).join('');
+
+  document.getElementById('revealScores').innerHTML = scores.map((p, i) =>
+    `<li class="score-item"><span>${['🥇','🥈','🥉'][i] || '  '} ${p.name}</span><span class="score-pts">${p.score}</span></li>`
+  ).join('');
+
+  if (isHost) {
+    if (isLastRound) {
+      document.getElementById('endGameBtn').classList.remove('hidden');
+      document.getElementById('nextRoundBtn').classList.add('hidden');
+    } else {
+      document.getElementById('nextRoundBtn').classList.remove('hidden');
+      document.getElementById('endGameBtn').classList.add('hidden');
+    }
+    document.getElementById('revealMsg').textContent = '';
+  } else {
+    document.getElementById('revealMsg').textContent = 'Esperando al anfitrión…';
+  }
+
+  show('screen-reveal');
+});
+
+document.getElementById('nextRoundBtn').onclick = () => socket.emit('nextRound');
+document.getElementById('endGameBtn').onclick   = () => socket.emit('nextRound');
+
+// ── Game Over ─────────────────────────────────────────────────────────────────
+socket.on('gameOver', ({ scores }) => {
+  clearInterval(timerInterval);
+  document.getElementById('winnerName').textContent = scores[0]?.name || '?';
+  document.getElementById('finalScores').innerHTML = scores.map((p, i) =>
+    `<li class="score-item"><span>${['🥇','🥈','🥉'][i] || '#'+(i+1)} ${p.name}</span><span class="score-pts">${p.score} pts</span></li>`
+  ).join('');
+  show('screen-gameover');
+});
+
+// ── Socket ID ─────────────────────────────────────────────────────────────────
+socket.on('connect', () => { myId = socket.id; });
+</script>
+</body>
+</html>
