@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VERITY — La sombra de un engaño</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080507;--surface:#0f090d;--surface2:#160c12;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);
+  --text:#ddd0d8;--muted:rgba(221,208,216,.5);--hint:rgba(221,208,216,.25);
+  --accent:#b8829a;--red:#c45070;--gold:#c9a050;--dark-red:#7a2035;
+  --trust:#4a8fc4;--distrust:#c45070;
+}
+html,body{height:100%;background:var(--bg)}
+body{color:var(--text);font-family:'Crimson Text',serif;font-size:17px;line-height:1.75;overflow:hidden}
+
+/* ── Background mood ── */
+#bg-layer{position:fixed;inset:0;z-index:0;transition:background 2s ease}
+#bg-layer.manhattan{background:radial-gradient(ellipse at 30% 60%,#1a0810 0%,#080507 70%)}
+#bg-layer.mansion{background:radial-gradient(ellipse at 70% 30%,#0d1008 0%,#080507 70%)}
+#bg-layer.office{background:radial-gradient(ellipse at 50% 80%,#100808 0%,#080507 70%)}
+#bg-layer.manuscript{background:radial-gradient(ellipse at 20% 40%,#150508 0%,#080507 65%)}
+#bg-layer.revelation{background:radial-gradient(ellipse at 50% 50%,#1a0308 0%,#050205 60%)}
+
+/* ── Main layout ── */
+#game{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;max-width:720px;margin:0 auto;padding:0 20px}
+
+/* ── Top bar ── */
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.chapter-tag{font-family:'Playfair Display',serif;font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.trust-meter{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--hint)}
+.trust-bar-wrap{width:100px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.trust-bar{height:100%;border-radius:2px;transition:width .6s ease,background .6s ease}
+.trust-label{min-width:50px;text-align:right;font-size:10px;letter-spacing:.06em}
+
+/* ── Scene area ── */
+#scene{flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:8px;position:relative}
+
+/* ── Manuscript pages ── */
+#manuscript-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(8,5,7,.85);backdrop-filter:blur(4px);z-index:20}
+.manuscript-page{background:#f5f0e8;color:#2a1a10;border-radius:4px;padding:28px 32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.8);position:relative;font-family:'Crimson Text',serif;font-size:15px;line-height:1.8;max-height:70vh;overflow-y:auto}
+.manuscript-page::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(transparent,transparent 27px,rgba(0,0,0,.06) 27px,rgba(0,0,0,.06) 28px);pointer-events:none;border-radius:4px}
+.ms-header{font-family:'Playfair Display',serif;font-size:11px;letter-spacing:.15em;color:#8a6a50;text-transform:uppercase;margin-bottom:16px;border-bottom:1px solid rgba(0,0,0,.1);padding-bottom:8px}
+.ms-text{font-style:italic;color:#2a1a10;position:relative;z-index:1}
+.ms-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;color:#8a6a50;cursor:pointer;font-family:sans-serif}
+.ms-close:hover{color:#2a1a10}
+.ms-warning{display:inline-block;font-size:11px;background:#c45070;color:#fff;padding:2px 8px;border-radius:3px;margin-bottom:12px;font-style:normal;font-family:sans-serif;letter-spacing:.04em}
+
+/* ── Text display ── */
+#text-box{background:rgba(8,5,7,.7);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:12px;backdrop-filter:blur(8px);min-height:120px;max-height:45vh;overflow-y:auto}
+#speaker{font-family:'Playfair Display',serif;font-size:12px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;min-height:16px}
+#text-content{color:var(--text);font-size:16px;line-height:1.75}
+#text-content.narration{font-style:italic;color:var(--muted)}
+#text-content.manuscript{font-style:italic;color:#d4a0a0}
+#text-content.thought{color:var(--hint)}
+
+/* ── Choices ── */
+#choices{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;flex-shrink:0}
+.choice-btn{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:13px 18px;color:var(--text);font-family:'Crimson Text',serif;font-size:15px;cursor:pointer;text-align:left;transition:all .2s;line-height:1.4}
+.choice-btn:hover{background:rgba(184,130,154,.1);border-color:var(--accent);color:#fff}
+.choice-btn.trust{border-left:3px solid var(--trust)}
+.choice-btn.distrust{border-left:3px solid var(--distrust)}
+.choice-btn.neutral{border-left:3px solid rgba(255,255,255,.15)}
+#next-btn{background:none;border:none;color:var(--muted);font-family:'Crimson Text',serif;font-size:14px;cursor:pointer;align-self:flex-end;padding:6px 0;letter-spacing:.04em;transition:color .2s}
+#next-btn:hover{color:var(--accent)}
+
+/* ── Title screen ── */
+#title-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#080507;padding:24px}
+.title-logo{font-family:'Playfair Display',serif;font-size:clamp(48px,10vw,80px);font-style:italic;letter-spacing:4px;color:var(--text);margin-bottom:4px;text-align:center}
+.title-logo span{color:var(--accent)}
+.title-author{font-size:13px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:40px}
+.title-desc{max-width:440px;text-align:center;font-style:italic;color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:36px}
+.title-btn{background:none;border:1px solid rgba(184,130,154,.4);border-radius:8px;padding:13px 36px;color:var(--accent);font-family:'Playfair Display',serif;font-size:16px;cursor:pointer;transition:all .2s;letter-spacing:.06em}
+.title-btn:hover{background:rgba(184,130,154,.1);border-color:var(--accent)}
+.title-warning{font-size:11px;color:var(--hint);margin-top:20px;text-align:center;max-width:380px;line-height:1.6}
+
+/* ── End screen ── */
+#end-screen{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;background:#080507;padding:24px;text-align:center}
+.end-title{font-family:'Playfair Display',serif;font-size:32px;font-style:italic;margin-bottom:8px}
+.end-subtitle{font-size:14px;color:var(--muted);letter-spacing:.08em;margin-bottom:32px}
+.end-result{max-width:480px;font-style:italic;color:var(--muted);font-size:15px;line-height:1.8;margin-bottom:28px;padding:20px;border:1px solid var(--border);border-radius:10px}
+.end-score{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:24px}
+.end-btn{background:none;border:1px solid rgba(184,130,154,.4);border-radius:8px;padding:11px 30px;color:var(--accent);font-family:'Playfair Display',serif;font-size:15px;cursor:pointer;transition:all .2s}
+.end-btn:hover{background:rgba(184,130,154,.1)}
+
+/* ── Typewriter ── */
+@keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{display:inline-block;width:2px;height:1em;background:var(--accent);vertical-align:text-bottom;margin-left:1px;animation:cursor-blink .7s ease-in-out infinite}
+
+/* ── Chapter transition ── */
+#chapter-transition{position:fixed;inset:0;z-index:40;background:#080507;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .5s}
+#chapter-transition.show{opacity:1;pointer-events:all}
+.ct-chapter{font-family:'Playfair Display',serif;font-size:13px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.ct-title{font-family:'Playfair Display',serif;font-size:26px;font-style:italic;color:var(--text)}
+</style>
+</head>
+<body>
+
+<div id="bg-layer" class="manhattan"></div>
+
+<!-- Title Screen -->
+<div id="title-screen">
+  <div class="title-logo">VER<span>I</span>TY</div>
+  <div class="title-author">Basado en la novela de Colleen Hoover</div>
+  <div class="title-desc">"Cada historia tiene dos versiones. La verdad y la mentira. A veces son la misma cosa."</div>
+  <button class="title-btn" id="startGameBtn">Comenzar historia</button>
+  <div class="title-warning">Esta novela interactiva sigue el orden del libro. Tus decisiones revelarán en qué medida confías en la verdad. Contiene temas para adultos.</div>
+</div>
+
+<!-- Chapter transition -->
+<div id="chapter-transition">
+  <div class="ct-chapter" id="ct-chapter"></div>
+  <div class="ct-title" id="ct-title"></div>
+</div>
+
+<!-- Manuscript overlay -->
+<div id="manuscript-overlay">
+  <div class="manuscript-page">
+    <button class="ms-close" id="ms-close">✕</button>
+    <div class="ms-header">Autobiografía — V. Crawford · Manuscrito privado</div>
+    <span class="ms-warning">DOCUMENTO CONFIDENCIAL</span>
+    <div class="ms-text" id="ms-text"></div>
+  </div>
+</div>
+
+<!-- End screen -->
+<div id="end-screen">
+  <div class="end-title" id="end-title"></div>
+  <div class="end-subtitle" id="end-subtitle"></div>
+  <div class="end-result" id="end-result"></div>
+  <div class="end-score" id="end-score"></div>
+  <button class="end-btn" onclick="location.reload()">Volver a jugar</button>
+</div>
+
+<!-- Game -->
+<div id="game">
+  <div id="topbar">
+    <div class="chapter-tag" id="chapter-tag">Capítulo 1</div>
+    <div class="trust-meter">
+      <span style="color:var(--trust);font-size:10px">CONFÍA</span>
+      <div class="trust-bar-wrap"><div class="trust-bar" id="trust-bar"></div></div>
+      <span style="color:var(--distrust);font-size:10px">SOSPECHA</span>
+    </div>
+  </div>
+  <div id="scene">
+    <div id="text-box">
+      <div id="speaker"></div>
+      <div id="text-content"></div>
+    </div>
+    <div id="choices"></div>
+  </div>
+</div>
+
+<script>
+// ── Trust system (0=full trust, 100=full distrust) ────────────────────────────
+let trust = 50; // starts neutral
+let currentNode = 0;
+let typing = false;
+let typeTimer = null;
+let waitingNext = false;
+
+function updateTrustBar() {
+  const bar = document.getElementById('trust-bar');
+  bar.style.width = trust + '%';
+  bar.style.background = trust > 60 ? 'var(--distrust)' : trust < 40 ? 'var(--trust)' : 'var(--accent)';
+  const label = trust > 65 ? 'SOSPECHA' : trust < 35 ? 'CONFÍA' : 'NEUTRAL';
+}
+updateTrustBar();
+
+// ── Story nodes ───────────────────────────────────────────────────────────────
+// type: narration | dialogue | thought | manuscript | choice | chapter | end | ms-read
+const STORY = [
+  // ── CAPÍTULO 1: Manhattan ─────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 1', title:'Manhattan', bg:'manhattan' },
+  { type:'narration', text:'Manhattan, un martes cualquiera. El sol apenas calienta el asfalto cuando el semáforo cambia y la multitud avanza.' },
+  { type:'narration', text:'Oigo el crujido del cráneo antes de que la sangre me salpique la blusa.' },
+  { type:'narration', text:'El hombre estaba justo delante de mí. Miraba el móvil. Bajó a la calzada sin mirar y el camión lo arrolló.' },
+  { type:'thought', speaker:'Lowen', text:'«Acabo de ver morir a un hombre. Su sangre está en mi ropa. Y tengo una reunión en cinco minutos.»' },
+  { type:'narration', text:'Entonces una voz a mi espalda:' },
+  { type:'dialogue', speaker:'Desconocido', text:'¿Te has hecho daño?' },
+  { type:'narration', text:'Me giro. Un hombre de unos treinta años me mira con preocupación genuina. No es neoyorquino —los neoyorquinos no preguntan esas cosas.' },
+  { type:'thought', speaker:'Lowen', text:'«La sangre no es mía», le digo. Y añado lo que no debería: «Estaba al lado de él cuando ocurrió».»' },
+  { type:'narration', text:'Me lleva a una cafetería. Me presta su camisa blanca. Su nombre, descubro después, es Jeremy Crawford.' },
+  { type:'narration', text:'Y resulta que él también tiene una reunión en Pantem Press. La misma reunión que yo.' },
+  { type:'choice', choices:[
+    { text:'«Es una coincidencia extraña»', effect: 5, type:'distrust', next: 12 },
+    { text:'«A veces el destino actúa así»', effect: -5, type:'trust', next: 12 },
+  ]},
+  // ── CAPÍTULO 2: La propuesta ──────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 2', title:'La propuesta', bg:'manhattan' },
+  { type:'narration', text:'En la reunión, la editora Corey reveló la verdad: Verity Crawford, la autora más vendida del momento, sufrió un grave accidente. Está en coma.' },
+  { type:'dialogue', speaker:'Corey', text:'Su serie está incompleta. Jeremy necesita a alguien que la termine. Alguien que entienda la voz de Verity.' },
+  { type:'dialogue', speaker:'Jeremy', text:'He leído tus libros, Lowen. Verity también los leía. Creo que eres la indicada.' },
+  { type:'thought', speaker:'Lowen', text:'«Estoy al borde de la bancarrota. Esto salvaría mi carrera. Pero tendría que ir a vivir a su mansión, con él, con su esposa inconsciente en el piso de arriba.»' },
+  { type:'choice', choices:[
+    { text:'Aceptar sin dudar — el dinero es urgente', effect: -5, type:'neutral', next: 18 },
+    { text:'Pedir tiempo para pensarlo', effect: 0, type:'neutral', next: 18 },
+    { text:'Sentir que algo no encaja en todo esto', effect: 8, type:'distrust', next: 18 },
+  ]},
+  // ── CAPÍTULO 3: La mansión ────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 3', title:'La mansión Crawford', bg:'mansion' },
+  { type:'narration', text:'Vermont. La mansión Crawford se alza entre los árboles, sólida y silenciosa como un secreto bien guardado.' },
+  { type:'narration', text:'Jeremy me recibe con su hijo Crew, un niño de pocos años que observa desde las escaleras sin decir nada.' },
+  { type:'dialogue', speaker:'Jeremy', text:'Verity está en el dormitorio principal. Los cuidadores vienen tres veces por semana. Tú tendrás el estudio.' },
+  { type:'narration', text:'Desde el pasillo, escucho un sonido. Un sonido que no debería venir de alguien en coma.' },
+  { type:'thought', speaker:'Lowen', text:'«¿Fue un gemido? ¿O solo el crujido de la casa vieja?»' },
+  { type:'choice', choices:[
+    { text:'Ignorarlo — las casas viejas hacen ruidos', effect: -8, type:'trust', next: 25 },
+    { text:'Preguntarle a Jeremy qué fue ese ruido', effect: 5, type:'distrust', next: 25 },
+    { text:'Ir a investigar sola por el pasillo', effect: 10, type:'distrust', next: 25 },
+  ]},
+  // ── CAPÍTULO 4: El manuscrito ──────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 4', title:'Lo que encontré', bg:'office' },
+  { type:'narration', text:'El estudio de Verity es un caos controlado. Papeles, notas, post-its. Empiezo a buscar material para continuar la serie.' },
+  { type:'narration', text:'Detrás de una estantería, en una caja sin etiquetar, encuentro un manuscrito encuadernado a mano.' },
+  { type:'narration', text:'La primera página dice: "Para mis ojos únicamente. Si lo estás leyendo, es porque encontraste lo que nunca debiste encontrar."' },
+  { type:'choice', choices:[
+    { text:'Cerrarlo y devolverlo donde estaba', effect: -15, type:'trust', next: 28 },
+    { text:'Leer la primera página nada más', effect: 5, type:'distrust', next: 29 },
+    { text:'Leerlo todo — necesito conocer a Verity para escribir como ella', effect: 10, type:'distrust', next: 30 },
+  ]},
+  { type:'narration', text:'Lo cierras. Pero esa noche no puedes dormir. La caja sigue ahí, esperando.', next:30 },
+  { type:'narration', text:'Lees la primera página. Y no puedes parar.', next:30 },
+  { type:'ms-read', msText:'Conocí a Jeremy Crawford cuando tenía veintidós años. Era todo lo que yo no era: seguro, amado, deseado. Lo quería con una intensidad que me asustaba. No era amor lo que sentía. Era necesidad. Era hambre. Jeremy era lo único que me hacía sentir que existía.\n\nCuando quedé embarazada de las gemelas, supe que algo dentro de mí se rompería. Y se rompió.', next:31 },
+
+  // ── CAPÍTULO 5: Los secretos de Verity ───────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 5', title:'La autobiografía', bg:'manuscript' },
+  { type:'narration', text:'Sigues leyendo el manuscrito noche tras noche. Lo que describes es aterrador: una mujer que admite haber deseado la muerte de sus propias hijas.' },
+  { type:'ms-read', msText:'Chloe murió a los dos años. Se cayó por las escaleras. Jeremy lloró durante semanas. Yo también lloré — pero no por las mismas razones que él.\n\nLa noche que ocurrió, yo estaba en la parte de arriba. Lo vi todo. Y no hice nada.\n\nHarper tenía seis años cuando murió ahogada en el lago. Jeremy no estaba en casa. Yo sí.\n\nDigo "murió ahogada". Eso es lo que dice el informe policial.', next:34 },
+  { type:'thought', speaker:'Lowen', text:'«Si esto es verdad, Verity mató a sus propias hijas. Y está aquí arriba, a metros de mí, fingiendo estar en coma.»' },
+  { type:'choice', choices:[
+    { text:'Esto no puede ser verdad — nadie escribe algo así', effect: -15, type:'trust', next: 36 },
+    { text:'Puede ser ficción terapéutica — escritoras a veces imaginan lo oscuro', effect: -10, type:'trust', next: 36 },
+    { text:'La forma en que lo escribe es demasiado específica para ser inventado', effect: 15, type:'distrust', next: 36 },
+    { text:'Debo contárselo a Jeremy ahora mismo', effect: 10, type:'distrust', next: 36 },
+  ]},
+  // ── CAPÍTULO 6: Jeremy ────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 6', title:'Lo que siento', bg:'mansion' },
+  { type:'narration', text:'Los días pasan. Jeremy y tú cenan juntos cada noche. Hablas de libros, de escritura, de la vida que él tenía antes del accidente.' },
+  { type:'dialogue', speaker:'Jeremy', text:'Verity siempre decía que las historias más oscuras vienen de los lugares más honestos de uno mismo.' },
+  { type:'thought', speaker:'Lowen', text:'«No sé si lo que siento por él es admiración o algo más. Pero sé que es peligroso.»' },
+  { type:'dialogue', speaker:'Jeremy', text:'¿Encontraste lo que necesitabas en el estudio? ¿Algo útil entre sus papeles?' },
+  { type:'choice', choices:[
+    { text:'Contarle todo sobre el manuscrito', effect: -5, type:'neutral', next: 42 },
+    { text:'«Sí, hay mucho material. La serie será magnífica.»', effect: 0, type:'neutral', next: 43 },
+    { text:'«Encontré algo... pero necesito más tiempo para entenderlo.»', effect: 5, type:'distrust', next: 44 },
+  ]},
+  { type:'narration', text:'Le cuentas todo. Jeremy se queda en silencio durante un largo momento. Luego dice: "Quémalo."', next:45 },
+  { type:'narration', text:'Mientes. Por primera vez en tu vida, la mentira te sale natural.', next:45 },
+  { type:'narration', text:'Él asiente, sin sospechar nada. Y esa noche vuelves a leer el manuscrito.', next:45 },
+
+  // ── CAPÍTULO 7: La noche que todo cambia ─────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 7', title:'Una noche en la mansión', bg:'mansion' },
+  { type:'narration', text:'Despiertas a medianoche con un sonido extraño. Como pasos. Alguien camina por el pasillo.' },
+  { type:'narration', text:'Te asomas. La puerta del dormitorio de Verity está entreabierta. Dentro, oscuridad.' },
+  { type:'narration', text:'Y entonces la ves.' },
+  { type:'narration', text:'Verity Crawford está de pie junto a la ventana. Mirando hacia afuera. Completamente inmóvil.' },
+  { type:'thought', speaker:'Lowen', text:'«Esto no es posible. Está en coma. Los médicos dijeron que—»' },
+  { type:'choice', choices:[
+    { text:'Gritar y despertar a Jeremy', effect: 15, type:'distrust', next: 52 },
+    { text:'Quedarte paralizada, sin hacer nada', effect: 0, type:'neutral', next: 53 },
+    { text:'Entrar a la habitación y enfrentarla', effect: 20, type:'distrust', next: 54 },
+  ]},
+  { type:'narration', text:'Jeremy llega corriendo. Ve a Verity de pie. Se queda sin habla. "Esto pasa a veces", dice al fin. "Los médicos lo llaman movimientos reflejos."', next:55 },
+  { type:'narration', text:'Te quedas helada. Pero no haces nada. Al día siguiente actúas como si nada hubiera pasado.', next:55 },
+  { type:'narration', text:'Verity se gira. Por un segundo, juras que te mira directamente. Luego vuelve a caer, inconsciente, sobre la cama.', next:55 },
+
+  // ── CAPÍTULO 8: La decisión ───────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 8', title:'La verdad que quema', bg:'revelation' },
+  { type:'narration', text:'Has terminado de leer el manuscrito. Sabes todo lo que Verity confiesa: el odio a sus hijas, las muertes que describe como accidentes, el miedo que tiene de que Jeremy descubra quién es realmente.' },
+  { type:'narration', text:'Jeremy está en el jardín con Crew. Los observas desde la ventana. Es una imagen perfecta.' },
+  { type:'thought', speaker:'Lowen', text:'«Si le muestro el manuscrito, destruiré lo que queda de su vida. Si lo quemo, protejo a un hombre que puede ser feliz. Pero si Verity no está en coma de verdad...»' },
+  { type:'narration', text:'Tienes el manuscrito en las manos. El encendedor que encontraste en el cajón brilla bajo la luz.' },
+  { type:'choice', choices:[
+    { text:'Quemarlo — lo que no se sabe no puede hacer daño', effect: -20, type:'trust', next: 59 },
+    { text:'Dárselo a Jeremy — merece saber la verdad', effect: 20, type:'distrust', next: 60 },
+    { text:'Guardarlo — puede que algún día lo necesites como prueba', effect: 10, type:'distrust', next: 61 },
+  ]},
+  { type:'narration', text:'Las llamas consumen las páginas una a una. La autobiografía de Verity se convierte en cenizas. La verdad desaparece.', next:62 },
+  { type:'narration', text:'Jeremy lee el manuscrito en silencio. Cuando termina, tiene los ojos rojos. "¿Crees que es verdad?" te pregunta.', next:62 },
+  { type:'narration', text:'Lo guardas en la maleta. No sabes cuándo lo usarás. Pero ahora tienes el poder.', next:62 },
+
+  // ── CAPÍTULO FINAL ─────────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Epílogo', title:'Lo que queda', bg:'revelation' },
+  { type:'narration', text:'Tres días después, Verity Crawford muere. El informe oficial dice: insuficiencia respiratoria, complicación del coma.' },
+  { type:'narration', text:'Jeremy llora. Crew no entiende qué significa que mamá ya no esté.' },
+  { type:'thought', speaker:'Lowen', text:'«Y yo me pregunto si alguien más sabía. Si el final de la historia de Verity fue escrito antes de que yo llegara.»' },
+  { type:'narration', text:'Meses después, Jeremy te envía una carta. Adjunta hay una nota escrita a mano que no reconoces.' },
+  { type:'narration', text:'La letra es de Verity.' },
+  { type:'narration', text:'Y en ella dice: "Sé lo que encontraste. Sé lo que hiciste. La pregunta no es si soy un monstruo. La pregunta es: ¿lo eres tú?"' },
+  { type:'end' },
+];
+
+// ── Engine ─────────────────────────────────────────────────────────────────────
+let nodeIndex = 0;
+let skipNext = false;
+
+function showChapterTransition(chapter, title, cb) {
+  const ct = document.getElementById('chapter-transition');
+  document.getElementById('ct-chapter').textContent = chapter;
+  document.getElementById('ct-title').textContent = title;
+  ct.classList.add('show');
+  setTimeout(() => {
+    ct.classList.remove('show');
+    setTimeout(cb, 500);
+  }, 2000);
+}
+
+function typeText(el, text, cb) {
+  el.textContent = '';
+  typing = true;
+  let i = 0;
+  clearInterval(typeTimer);
+  typeTimer = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i];
+      i++;
+    } else {
+      clearInterval(typeTimer);
+      typing = false;
+      if (cb) cb();
+    }
+  }, 18);
+}
+
+function setBg(mood) {
+  const bg = document.getElementById('bg-layer');
+  bg.className = 'show ' + (mood || 'manhattan');
+}
+
+function showManuscript(text, cb) {
+  document.getElementById('ms-text').textContent = text;
+  const overlay = document.getElementById('manuscript-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('ms-close').onclick = () => {
+    overlay.style.display = 'none';
+    if (cb) cb();
+  };
+}
+
+function renderNode(node) {
+  const speakerEl = document.getElementById('speaker');
+  const textEl = document.getElementById('text-content');
+  const choicesEl = document.getElementById('choices');
+  const nextBtn = document.getElementById('next-btn');
+  choicesEl.innerHTML = '';
+
+  if (node.type === 'chapter') {
+    setBg(node.bg);
+    document.getElementById('chapter-tag').textContent = node.chapter;
+    showChapterTransition(node.chapter, node.title, () => next());
+    return;
+  }
+
+  if (node.type === 'end') {
+    showEndScreen();
+    return;
+  }
+
+  if (node.type === 'ms-read') {
+    speakerEl.textContent = '';
+    textEl.className = '';
+    textEl.textContent = '[ Abres el manuscrito y lees... ]';
+    const readBtn = document.createElement('button');
+    readBtn.className = 'choice-btn neutral';
+    readBtn.textContent = '📄 Leer el manuscrito';
+    readBtn.onclick = () => {
+      choicesEl.innerHTML = '';
+      showManuscript(node.msText, () => next(node.next));
+    };
+    choicesEl.appendChild(readBtn);
+    return;
+  }
+
+  if (node.type === 'choice') {
+    node.choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn ' + (c.type || 'neutral');
+      btn.textContent = c.text;
+      btn.onclick = () => {
+        trust = Math.max(0, Math.min(100, trust + (c.effect || 0)));
+        updateTrustBar();
+        choicesEl.innerHTML = '';
+        next(c.next);
+      };
+      choicesEl.appendChild(btn);
+    });
+    speakerEl.textContent = '';
+    textEl.className = 'narration';
+    textEl.textContent = '¿Qué decides?';
+    return;
+  }
+
+  // Narration / dialogue / thought
+  speakerEl.textContent = node.speaker || '';
+  textEl.className = node.type === 'narration' ? 'narration' : node.type === 'thought' ? 'thought' : '';
+  typeText(textEl, node.text, () => {
+    waitingNext = true;
+    const nb = document.createElement('button');
+    nb.id = 'next-btn';
+    nb.textContent = 'Continuar →';
+    nb.onclick = () => { nb.remove(); next(node.next); };
+    choicesEl.appendChild(nb);
+  });
+}
+
+function next(overrideIndex) {
+  const choices = document.getElementById('choices');
+  choices.innerHTML = '';
+  if (overrideIndex !== undefined) {
+    nodeIndex = overrideIndex;
+  } else {
+    nodeIndex++;
+  }
+  if (nodeIndex >= STORY.length) { showEndScreen(); return; }
+  renderNode(STORY[nodeIndex]);
+}
+
+function showEndScreen() {
+  const screen = document.getElementById('end-screen');
+  screen.style.display = 'flex';
+  let title, subtitle, result, score;
+  if (trust < 30) {
+    title = 'Elegiste creer en ella';
+    subtitle = 'Fin: La llama de la fe';
+    result = 'Quemaste el manuscrito. Destruiste la única evidencia. Verity Crawford murió siendo, para el mundo, una víctima. Jeremy nunca supo la verdad. O quizás sí la sabía, y los dos eligieron el mismo silencio. En la oscuridad, la confianza ciega es una forma de complicidad.';
+    score = '💙 Índice de sospecha: ' + trust + '% — "Elegiste la paz sobre la verdad."';
+  } else if (trust > 70) {
+    title = 'Nunca confiaste en ella';
+    subtitle = 'Fin: La verdad que destruye';
+    result = 'Lo viste desde el principio. Los detalles eran demasiado específicos, los accidentes demasiado convenientes. Compartiste el manuscrito. Jeremy lo leyó. Lo que pasó después de esa noche, ninguno de los dos lo habla. Algunas verdades no liberan — solo reconfiguran el dolor.';
+    score = '🔴 Índice de sospecha: ' + trust + '% — "Nunca dejaste de investigar."';
+  } else {
+    title = 'La duda es tu respuesta';
+    subtitle = 'Fin: La sombra de un engaño';
+    result = 'No creíste completamente en el manuscrito, pero tampoco pudiste ignorarlo. Te quedaste en el espacio gris donde viven los mejores thrillers: entre la verdad posible y la mentira perfecta. Eso, quizás, es lo más honesto de todo.';
+    score = '🎭 Índice de sospecha: ' + trust + '% — "La ambigüedad fue tu única certeza."';
+  }
+  document.getElementById('end-title').textContent = title;
+  document.getElementById('end-subtitle').textContent = subtitle;
+  document.getElementById('end-result').textContent = result;
+  document.getElementById('end-score').textContent = score;
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+document.getElementById('startGameBtn').onclick = () => {
+  document.getElementById('title-screen').style.display = 'none';
+  renderNode(STORY[nodeIndex]);
+};
+
+// Tap/click to skip typewriter
+document.getElementById('text-box').addEventListener('click', () => {
+  if (typing) {
+    clearInterval(typeTimer);
+    typing = false;
+    // complete text instantly
+    const node = STORY[nodeIndex];
+    if (node && node.text) {
+      document.getElementById('text-content').textContent = node.text;
+      waitingNext = true;
+      const choices = document.getElementById('choices');
+      if (!document.getElementById('next-btn')) {
+        const nb = document.createElement('button');
+        nb.id = 'next-btn';
+        nb.textContent = 'Continuar →';
+        nb.onclick = () => { nb.remove(); next(node.next); };
+        choices.appendChild(nb);
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
