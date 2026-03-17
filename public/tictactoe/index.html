@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tres en Raya: Verdad o Reto</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07080f;--s1:#0e1019;--s2:#161824;
+  --b:rgba(255,255,255,.07);--b2:rgba(255,255,255,.14);
+  --text:#e4e6f0;--muted:rgba(228,230,240,.45);--hint:rgba(228,230,240,.22);
+  --x:#e05c8a;--o:#5ca8e0;--truth:#9b6ee0;--dare:#e08b3a;
+  --gold:#e0c44a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+.wrap{width:100%;max-width:520px;padding:20px 16px 48px;display:flex;flex-direction:column;align-items:center;gap:0}
+a.back{font-size:12px;color:var(--hint);text-decoration:none;align-self:flex-start;margin-bottom:12px}
+a.back:hover{color:var(--x)}
+
+/* ── Title ── */
+.title{font-size:26px;font-weight:800;margin-bottom:4px;text-align:center}
+.title .x{color:var(--x)}.title .o{color:var(--o)}
+.subtitle{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px;text-align:center}
+
+/* ── Lobby ── */
+.panel{background:var(--s1);border:1px solid var(--b);border-radius:16px;padding:24px;width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+input{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;width:100%}
+input:focus{border-color:var(--x)}
+.btn{border:none;border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s}
+.btn-x{background:var(--x);color:#07080f}.btn-o{background:var(--o);color:#07080f}
+.btn-ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--b)}
+.btn:hover{opacity:.85}.btn:active{transform:scale(.98)}
+#status{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
+
+/* ── Game area ── */
+#game-area{display:none;flex-direction:column;align-items:center;width:100%;gap:16px}
+
+/* ── Turn indicator ── */
+.turn-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 16px;background:var(--s1);border:1px solid var(--b);border-radius:12px;font-size:13px}
+.player-tag{display:flex;align-items:center;gap:8px;font-weight:700}
+.sym{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.sym-x{background:rgba(224,92,138,.15);color:var(--x);border:1.5px solid var(--x)}
+.sym-o{background:rgba(92,168,224,.15);color:var(--o);border:1.5px solid var(--o)}
+.active-player{border-color:rgba(255,255,255,.25)}
+.turn-arrow{font-size:14px;color:var(--muted)}
+
+/* ── Board ── */
+#board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.cell{aspect-ratio:1;background:var(--s1);border:1.5px solid var(--b2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;padding:6px}
+.cell:hover:not(.taken):not(.disabled){background:var(--s2);border-color:rgba(255,255,255,.28);transform:scale(1.03)}
+.cell.taken{cursor:default}
+.cell.taken-x{background:rgba(224,92,138,.08);border-color:rgba(224,92,138,.4)}
+.cell.taken-o{background:rgba(92,168,224,.08);border-color:rgba(92,168,224,.4)}
+.cell.win-line{animation:winPulse .6s ease-in-out infinite alternate}
+@keyframes winPulse{from{box-shadow:none}to{box-shadow:0 0 20px rgba(255,255,255,.3)}}
+.cell-symbol{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;line-height:1}
+.cell-symbol.x{color:var(--x)}.cell-symbol.o{color:var(--o)}
+.cell-type{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;padding:2px 6px;border-radius:4px}
+.cell-type.truth{background:rgba(155,110,224,.2);color:var(--truth)}
+.cell-type.dare {background:rgba(224,139,58,.2); color:var(--dare)}
+.cell.disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Challenge modal ── */
+#challenge-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,8,15,.88);backdrop-filter:blur(6px);z-index:50;padding:20px}
+.modal-card{background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:28px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
+.modal-type-badge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;align-self:flex-start}
+.badge-truth{background:rgba(155,110,224,.2);color:var(--truth);border:1px solid rgba(155,110,224,.4)}
+.badge-dare {background:rgba(224,139,58,.2); color:var(--dare); border:1px solid rgba(224,139,58,.4)}
+.modal-player{font-size:13px;color:var(--muted)}
+.modal-challenge{font-size:17px;line-height:1.55;font-weight:700}
+.modal-challenge.truth{color:var(--truth)}.modal-challenge.dare{color:var(--dare)}
+.modal-actions{display:flex;gap:10px}
+.btn-done{background:var(--x);color:#07080f;flex:1}
+.btn-skip{background:rgba(255,255,255,.07);color:var(--muted);flex:1;border:1px solid var(--b);font-size:13px}
+.tts-btn{background:none;border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;transition:all .2s}
+.tts-btn:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.tts-btn.speaking{color:var(--x);border-color:rgba(224,92,138,.5);animation:speakPulse .8s ease-in-out infinite}
+@keyframes speakPulse{0%,100%{opacity:1}50%{opacity:.6}}
+.modal-waiting{font-size:13px;color:var(--muted);text-align:center}
+
+/* ── Score / result ── */
+.score-bar{display:flex;justify-content:space-between;width:100%;font-size:13px;padding:8px 16px;background:var(--s1);border:1px solid var(--b);border-radius:10px}
+.score-x{color:var(--x);font-weight:700}.score-o{color:var(--o);font-weight:700}
+
+#result-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,8,15,.9);z-index:60;flex-direction:column;gap:16px;padding:20px}
+.result-card{background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:32px;max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px}
+.result-emoji{font-size:52px}
+.result-title{font-size:24px;font-weight:800}
+.result-sub{font-size:13px;color:var(--muted)}
+.result-actions{display:flex;gap:10px;margin-top:4px}
+
+/* ── Voice chat bar ── */
+.audio-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--s1);border:1px solid var(--b);border-radius:12px;width:100%;margin-top:12px}
+.voice-left{display:flex;align-items:center;gap:10px}
+.mic-btn{background:rgba(224,92,138,.12);border:1px solid rgba(224,92,138,.3);border-radius:8px;padding:7px 14px;color:var(--x);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.mic-btn:hover{background:rgba(224,92,138,.22)}
+.mic-btn.active{background:var(--x);color:#07080f;border-color:var(--x);animation:micPulse 1.4s ease-in-out infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,92,138,.4)}50%{box-shadow:0 0 0 6px rgba(224,92,138,0)}}
+.voice-status{font-size:11px;color:var(--hint)}
+.voice-indicators{display:flex;gap:12px}
+.voice-indicator{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.vi-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12);transition:background .2s,box-shadow .2s;flex-shrink:0}
+.vi-dot.speaking{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.7);animation:speakWave .5s ease-in-out infinite alternate}
+@keyframes speakWave{from{transform:scale(1)}to{transform:scale(1.4)}}
+
+/* ── Waiting dots ── */
+.dots{display:flex;gap:5px;justify-content:center;padding:12px 0}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--x);animation:dp 1.4s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s;background:var(--o)}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.4);opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Menú principal</a>
+  <div class="title"><span class="x">X</span> Verdad o Reto <span class="o">O</span></div>
+  <div class="subtitle">Tres en raya · Reclama cada casilla completando el desafío</div>
+
+  <!-- Voice chat bar -->
+  <div class="audio-bar" id="voiceBar">
+    <div class="voice-left">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️ Activar voz</button>
+      <div class="voice-status" id="voiceStatus">Voz desactivada</div>
+    </div>
+    <div class="voice-indicators">
+      <div class="voice-indicator" id="myVoiceIndicator">
+        <div class="vi-dot" id="myDot"></div>
+        <span id="myVoiceLabel">Tú</span>
+      </div>
+      <div class="voice-indicator" id="rivalVoiceIndicator">
+        <div class="vi-dot" id="rivalDot"></div>
+        <span id="rivalVoiceLabel">Rival</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lobby -->
+  <div id="lobby" style="width:100%;margin-top:12px">
+    <div class="panel">
+      <input id="nick" type="text" placeholder="Tu nombre…" maxlength="16" autocomplete="off">
+      <button class="btn btn-x" id="joinBtn">▶ Buscar rival</button>
+      <p id="status"></p>
+      <div class="dots hidden" id="waitDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+    <div class="panel" style="font-size:13px;color:var(--muted);line-height:1.7;gap:6px">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">¿Cómo funciona?</div>
+      <div>🎯 Haz click en una casilla para revelar el desafío.</div>
+      <div><span style="color:var(--truth)">■ VERDAD</span> — Responde honestamente a la pregunta.</div>
+      <div><span style="color:var(--dare)">■ RETO</span> — Completa la acción en tiempo real.</div>
+      <div>✅ Si cumples, la casilla es tuya. Si fallas, la gana el rival.</div>
+    </div>
+  </div>
+
+  <!-- Game -->
+  <div id="game-area">
+    <div class="turn-bar">
+      <div class="player-tag" id="p1tag"><div class="sym sym-x">X</div><span id="p1name">Tú</span></div>
+      <div class="turn-arrow" id="turnArrow">▶</div>
+      <div class="player-tag" id="p2tag"><div class="sym sym-o">O</div><span id="p2name">Rival</span></div>
+    </div>
+    <div id="board"></div>
+    <div class="score-bar">
+      <span class="score-x" id="scoreX">X: 0</span>
+      <span style="color:var(--hint);font-size:11px">casillas</span>
+      <span class="score-o" id="scoreO">O: 0</span>
+    </div>
+  </div>
+</div>
+
+<!-- Challenge modal -->
+<div id="challenge-modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="modal-type-badge" id="modalBadge">VERDAD</span>
+    </div>
+    <div class="modal-player" id="modalPlayer">Lowen debe completar:</div>
+    <div class="modal-challenge" id="modalText"></div>
+    <div class="modal-actions" id="modalActions">
+      <button class="btn btn-done" id="btnDone" onclick="challengeDone(true)">✅ ¡Lo hice!</button>
+      <button class="btn btn-skip" id="btnSkip" onclick="challengeDone(false)">❌ Me rindo</button>
+    </div>
+    <div class="modal-waiting hidden" id="modalWaiting">Esperando que el rival complete su reto…</div>
+  </div>
+</div>
+
+<!-- Result overlay -->
+<div id="result-overlay">
+  <div class="result-card">
+    <div class="result-emoji" id="resultEmoji"></div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <div class="result-actions">
+      <button class="btn btn-x" id="playAgainBtn">Jugar de nuevo</button>
+      <button class="btn btn-ghost" onclick="location.href='/'">Menú</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ── Audio SFX (Web Audio API) ──────────────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let actx = null;
+function getACtx(){ if(!actx) actx = new AudioCtx(); return actx; }
+function playTone(freq,dur,type='sine',vol=.35){
+  try{
+    const ctx=getACtx(),g=ctx.createGain(),o=ctx.createOscillator();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+    o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+function sfxClick(){ playTone(440,.1,'square',.2); }
+function sfxReveal(){ [330,440,550].forEach((f,i)=>setTimeout(()=>playTone(f,.12),i*90)); }
+function sfxSuccess(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.18,'sine',.45),i*80)); }
+function sfxFail(){ [300,250,200].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'sawtooth',.3),i*100)); }
+function sfxWin(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>playTone(f,.25,'sine',.5),i*100)); }
+
+// ── WebRTC Voice Chat ─────────────────────────────────────────────────────────
+let localStream = null;
+let peerConn    = null;
+let remoteAudio = null;
+let micActive   = false;
+let audioCtxForVAD = null;
+let analyserNode = null;
+let vadTimer = null;
+
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ]
+};
+
+async function toggleMic() {
+  if (!micActive) await startVoice();
+  else stopVoice();
+}
+
+async function startVoice() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    micActive = true;
+    document.getElementById('micBtn').textContent  = '🔴 Microfono activo';
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('voiceStatus').textContent = 'Conectando con rival…';
+    startVAD(localStream, 'myDot');
+    if (isInitiator) await createOffer();
+  } catch(e) {
+    document.getElementById('voiceStatus').textContent = 'Sin permiso de micrófono';
+    console.warn('Mic error:', e);
+  }
+}
+
+function stopVoice() {
+  micActive = false;
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (peerConn)    { peerConn.close(); peerConn = null; }
+  if (remoteAudio) { remoteAudio.srcObject = null; }
+  clearInterval(vadTimer);
+  document.getElementById('micBtn').textContent = '🎙️ Activar voz';
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('voiceStatus').textContent = 'Voz desactivada';
+  document.getElementById('myDot').classList.remove('speaking');
+  document.getElementById('rivalDot').classList.remove('speaking');
+}
+
+function getPeer() {
+  if (peerConn) return peerConn;
+  peerConn = new RTCPeerConnection(ICE_SERVERS);
+
+  // Add local tracks
+  if (localStream) localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+
+  // Receive remote audio
+  peerConn.ontrack = e => {
+    if (!remoteAudio) {
+      remoteAudio = document.createElement('audio');
+      remoteAudio.autoplay = true;
+      document.body.appendChild(remoteAudio);
+    }
+    remoteAudio.srcObject = e.streams[0];
+    startVAD(e.streams[0], 'rivalDot');
+    document.getElementById('voiceStatus').textContent = '🟢 Voz conectada';
+    document.getElementById('rivalVoiceLabel').textContent = rivalName || 'Rival';
+  };
+
+  peerConn.onicecandidate = e => {
+    if (e.candidate) socket.emit('rtc-ice', { candidate: e.candidate });
+  };
+
+  peerConn.onconnectionstatechange = () => {
+    if (peerConn.connectionState === 'connected')
+      document.getElementById('voiceStatus').textContent = '🟢 Voz conectada';
+    if (['disconnected','failed','closed'].includes(peerConn.connectionState))
+      document.getElementById('voiceStatus').textContent = 'Voz desconectada';
+  };
+
+  return peerConn;
+}
+
+async function createOffer() {
+  const pc = getPeer();
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  socket.emit('rtc-offer', { offer });
+}
+
+socket.on('rtc-offer', async ({ offer }) => {
+  if (!micActive) return; // only answer if mic is on
+  const pc = getPeer();
+  await pc.setRemoteDescription(new RTCSessionDescription(offer));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  socket.emit('rtc-answer', { answer });
+});
+
+socket.on('rtc-answer', async ({ answer }) => {
+  if (!peerConn) return;
+  await peerConn.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+socket.on('rtc-ice', async ({ candidate }) => {
+  try { if (peerConn) await peerConn.addIceCandidate(new RTCIceCandidate(candidate)); }
+  catch(e) {}
+});
+
+// Voice Activity Detection — animates the dot when someone speaks
+function startVAD(stream, dotId) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.fftSize);
+    const dot  = document.getElementById(dotId);
+    setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i=0; i<data.length; i++) sum += Math.abs(data[i]-128);
+      const vol = sum / data.length;
+      dot.classList.toggle('speaking', vol > 3);
+    }, 80);
+  } catch(e) {}
+}
+
+// ── Socket & Game ─────────────────────────────────────────────────────────────
+const socket    = io('/tictactoe');
+let mySymbol    = null;
+let myName      = '';
+let rivalName   = '';
+let myTurn      = false;
+let isInitiator = false; // X starts the WebRTC offer
+
+socket.on('waiting', () => {
+  document.getElementById('status').textContent = 'Buscando rival…';
+  document.getElementById('waitDots').classList.remove('hidden');
+});
+
+socket.on('gameStart', ({ mySymbol:sym, names, board, turn }) => {
+  mySymbol    = sym;
+  myName      = names[sym];
+  rivalName   = names[sym==='X'?'O':'X'];
+  isInitiator = sym === 'X';
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('game-area').style.display = 'flex';
+  const isX = sym === 'X';
+  document.getElementById('p1name').textContent = isX ? names.X : names.O;
+  document.getElementById('p2name').textContent = isX ? names.O : names.X;
+  document.getElementById('myVoiceLabel').textContent  = myName;
+  document.getElementById('rivalVoiceLabel').textContent = rivalName;
+  renderBoard(board, turn);
+  updateTurnBar(turn, names);
+});
+
+socket.on('challengeReveal', ({ cellIndex, challenge, playerName, symbol }) => {
+  const isMine = symbol === mySymbol;
+  showModal(challenge, playerName, isMine);
+  sfxReveal();
+});
+
+socket.on('boardUpdate', ({ board, turn }) => {
+  renderBoard(board, turn);
+  updateTurnBar(turn, { X: document.getElementById('p1name').textContent, O: document.getElementById('p2name').textContent });
+  updateScore(board);
+  closeModal();
+});
+
+socket.on('challengeFailed', ({ failedName }) => {
+  sfxFail();
+});
+
+socket.on('gameOver', ({ board, winner, winnerName, line }) => {
+  renderBoard(board, null, line);
+  updateScore(board);
+  closeModal();
+  setTimeout(() => {
+    showResult(winner, winnerName);
+    winner !== 'draw' ? sfxWin() : sfxReveal();
+  }, 500);
+});
+
+socket.on('gameReset', ({ board, turn }) => {
+  document.getElementById('result-overlay').style.display = 'none';
+  renderBoard(board, turn);
+  updateScore(board);
+});
+
+socket.on('opponentLeft', () => showResult('left', null));
+
+// ── Board rendering ───────────────────────────────────────────────────────────
+function renderBoard(board, turn, winLine=[]) {
+  myTurn = turn === mySymbol;
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+  board.forEach(cell => {
+    const div = document.createElement('div');
+    div.className = 'cell';
+    if (cell.owner) {
+      div.classList.add('taken', cell.owner==='X' ? 'taken-x' : 'taken-o');
+      if (winLine && winLine.includes(cell.index)) div.classList.add('win-line');
+      const sym = document.createElement('div');
+      sym.className = 'cell-symbol ' + (cell.owner==='X'?'x':'o');
+      sym.textContent = cell.owner;
+      div.appendChild(sym);
+    } else {
+      const ct = document.createElement('div');
+      ct.className = 'cell-type ' + (cell.challenge.type==='truth'?'truth':'dare');
+      ct.textContent = cell.challenge.type==='truth' ? 'VERDAD' : 'RETO';
+      div.appendChild(ct);
+      if (myTurn && !cell.pending) {
+        div.onclick = () => { sfxClick(); socket.emit('claimCell', { cellIndex: cell.index }); };
+      } else {
+        div.classList.add('disabled');
+      }
+    }
+    el.appendChild(div);
+  });
+}
+
+function updateTurnBar(turn, names) {
+  const isMyTurn = turn === mySymbol;
+  document.getElementById('turnArrow').textContent = isMyTurn ? '◀ Tu turno' : '▶ Turno rival';
+}
+
+function updateScore(board) {
+  const x = board.filter(c=>c.owner==='X').length;
+  const o = board.filter(c=>c.owner==='O').length;
+  document.getElementById('scoreX').textContent = `X: ${x}`;
+  document.getElementById('scoreO').textContent = `O: ${o}`;
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function showModal(challenge, playerName, isMine) {
+  document.getElementById('challenge-modal').style.display = 'flex';
+  const badge = document.getElementById('modalBadge');
+  badge.className = 'modal-type-badge badge-' + (challenge.type==='truth'?'truth':'dare');
+  badge.textContent = challenge.type==='truth' ? 'VERDAD' : 'RETO';
+  document.getElementById('modalPlayer').textContent = `${playerName} debe completar:`;
+  const txt = document.getElementById('modalText');
+  txt.className = 'modal-challenge ' + challenge.type;
+  txt.textContent = challenge.text;
+  document.getElementById('modalActions').classList.toggle('hidden', !isMine);
+  document.getElementById('modalWaiting').classList.toggle('hidden', isMine);
+}
+
+function closeModal() {
+  document.getElementById('challenge-modal').style.display = 'none';
+}
+
+function challengeDone(success) {
+  socket.emit('challengeDone', { success });
+  success ? sfxSuccess() : sfxFail();
+  closeModal();
+}
+
+// ── Result ────────────────────────────────────────────────────────────────────
+function showResult(winner, winnerName) {
+  document.getElementById('result-overlay').style.display = 'flex';
+  const isMe = winner === mySymbol;
+  if (winner==='draw') {
+    document.getElementById('resultEmoji').textContent  = '🤝';
+    document.getElementById('resultTitle').textContent  = '¡Empate!';
+    document.getElementById('resultSub').textContent    = 'Ninguno dominó el tablero.';
+  } else if (winner==='left') {
+    document.getElementById('resultEmoji').textContent  = '🏃';
+    document.getElementById('resultTitle').textContent  = 'Rival desconectado';
+    document.getElementById('resultSub').textContent    = 'La partida se canceló.';
+  } else {
+    document.getElementById('resultEmoji').textContent  = isMe ? '🏆' : '😔';
+    document.getElementById('resultTitle').textContent  = isMe ? '¡Ganaste!' : 'Perdiste';
+    document.getElementById('resultSub').textContent    = `${winnerName} gana esta partida.`;
+  }
+}
+
+// ── Lobby bindings ────────────────────────────────────────────────────────────
+document.getElementById('joinBtn').onclick = () => {
+  const n = document.getElementById('nick').value.trim() || 'Jugador';
+  myName = n;
+  sfxClick();
+  socket.emit('join', { name: n });
+  document.getElementById('joinBtn').disabled = true;
+};
+document.getElementById('nick').onkeydown = e => { if(e.key==='Enter') document.getElementById('joinBtn').click(); };
+document.getElementById('playAgainBtn').onclick = () => { sfxClick(); socket.emit('playAgain'); };
+</script>
+</body>
+</html>
