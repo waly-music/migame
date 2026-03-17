@@ -3,197 +3,176 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tres en Raya: Verdad o Reto</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>Verdad o Reto X·O</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+.hidden{display:none!important}
 :root{
   --bg:#07080f;--s1:#0e1019;--s2:#161824;
   --b:rgba(255,255,255,.07);--b2:rgba(255,255,255,.14);
   --text:#e4e6f0;--muted:rgba(228,230,240,.45);--hint:rgba(228,230,240,.22);
   --x:#e05c8a;--o:#5ca8e0;--truth:#9b6ee0;--dare:#e08b3a;
-  --gold:#e0c44a;
 }
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
-.wrap{width:100%;max-width:520px;padding:20px 16px 48px;display:flex;flex-direction:column;align-items:center;gap:0}
+.wrap{width:100%;max-width:520px;padding:20px 16px 48px;display:flex;flex-direction:column;align-items:center}
 a.back{font-size:12px;color:var(--hint);text-decoration:none;align-self:flex-start;margin-bottom:12px}
 a.back:hover{color:var(--x)}
-
-/* ── Title ── */
 .title{font-size:26px;font-weight:800;margin-bottom:4px;text-align:center}
 .title .x{color:var(--x)}.title .o{color:var(--o)}
-.subtitle{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px;text-align:center}
+.subtitle{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px;text-align:center}
 
-/* ── Lobby ── */
-.panel{background:var(--s1);border:1px solid var(--b);border-radius:16px;padding:24px;width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
-input{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;width:100%}
-input:focus{border-color:var(--x)}
-.btn{border:none;border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s}
-.btn-x{background:var(--x);color:#07080f}.btn-o{background:var(--o);color:#07080f}
-.btn-ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--b)}
-.btn:hover{opacity:.85}.btn:active{transform:scale(.98)}
-#status{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
-
-/* ── Game area ── */
-#game-area{display:none;flex-direction:column;align-items:center;width:100%;gap:16px}
-
-/* ── Turn indicator ── */
-.turn-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 16px;background:var(--s1);border:1px solid var(--b);border-radius:12px;font-size:13px}
-.player-tag{display:flex;align-items:center;gap:8px;font-weight:700}
-.sym{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace}
-.sym-x{background:rgba(224,92,138,.15);color:var(--x);border:1.5px solid var(--x)}
-.sym-o{background:rgba(92,168,224,.15);color:var(--o);border:1.5px solid var(--o)}
-.active-player{border-color:rgba(255,255,255,.25)}
-.turn-arrow{font-size:14px;color:var(--muted)}
-
-/* ── Board ── */
-#board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
-.cell{aspect-ratio:1;background:var(--s1);border:1.5px solid var(--b2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;padding:6px}
-.cell:hover:not(.taken):not(.disabled){background:var(--s2);border-color:rgba(255,255,255,.28);transform:scale(1.03)}
-.cell.taken{cursor:default}
-.cell.taken-x{background:rgba(224,92,138,.08);border-color:rgba(224,92,138,.4)}
-.cell.taken-o{background:rgba(92,168,224,.08);border-color:rgba(92,168,224,.4)}
-.cell.win-line{animation:winPulse .6s ease-in-out infinite alternate}
-@keyframes winPulse{from{box-shadow:none}to{box-shadow:0 0 20px rgba(255,255,255,.3)}}
-.cell-symbol{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;line-height:1}
-.cell-symbol.x{color:var(--x)}.cell-symbol.o{color:var(--o)}
-.cell-type{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;padding:2px 6px;border-radius:4px}
-.cell-type.truth{background:rgba(155,110,224,.2);color:var(--truth)}
-.cell-type.dare {background:rgba(224,139,58,.2); color:var(--dare)}
-.cell.disabled{opacity:.5;cursor:not-allowed}
-
-/* ── Challenge modal ── */
-#challenge-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,8,15,.88);backdrop-filter:blur(6px);z-index:50;padding:20px}
-.modal-card{background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:28px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
-.modal-type-badge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;align-self:flex-start}
-.badge-truth{background:rgba(155,110,224,.2);color:var(--truth);border:1px solid rgba(155,110,224,.4)}
-.badge-dare {background:rgba(224,139,58,.2); color:var(--dare); border:1px solid rgba(224,139,58,.4)}
-.modal-player{font-size:13px;color:var(--muted)}
-.modal-challenge{font-size:17px;line-height:1.55;font-weight:700}
-.modal-challenge.truth{color:var(--truth)}.modal-challenge.dare{color:var(--dare)}
-.modal-actions{display:flex;gap:10px}
-.btn-done{background:var(--x);color:#07080f;flex:1}
-.btn-skip{background:rgba(255,255,255,.07);color:var(--muted);flex:1;border:1px solid var(--b);font-size:13px}
-.tts-btn{background:none;border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;transition:all .2s}
-.tts-btn:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
-.tts-btn.speaking{color:var(--x);border-color:rgba(224,92,138,.5);animation:speakPulse .8s ease-in-out infinite}
-@keyframes speakPulse{0%,100%{opacity:1}50%{opacity:.6}}
-.modal-waiting{font-size:13px;color:var(--muted);text-align:center}
-
-/* ── Score / result ── */
-.score-bar{display:flex;justify-content:space-between;width:100%;font-size:13px;padding:8px 16px;background:var(--s1);border:1px solid var(--b);border-radius:10px}
-.score-x{color:var(--x);font-weight:700}.score-o{color:var(--o);font-weight:700}
-
-#result-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,8,15,.9);z-index:60;flex-direction:column;gap:16px;padding:20px}
-.result-card{background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:32px;max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px}
-.result-emoji{font-size:52px}
-.result-title{font-size:24px;font-weight:800}
-.result-sub{font-size:13px;color:var(--muted)}
-.result-actions{display:flex;gap:10px;margin-top:4px}
-
-/* ── Voice chat bar ── */
-.audio-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--s1);border:1px solid var(--b);border-radius:12px;width:100%;margin-top:12px}
-.voice-left{display:flex;align-items:center;gap:10px}
-.mic-btn{background:rgba(224,92,138,.12);border:1px solid rgba(224,92,138,.3);border-radius:8px;padding:7px 14px;color:var(--x);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
-.mic-btn:hover{background:rgba(224,92,138,.22)}
-.mic-btn.active{background:var(--x);color:#07080f;border-color:var(--x);animation:micPulse 1.4s ease-in-out infinite}
+/* voice bar */
+.voice-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;background:var(--s1);border:1px solid var(--b);border-radius:12px;width:100%;margin-bottom:14px}
+.mic-btn{background:rgba(224,92,138,.12);border:1px solid rgba(224,92,138,.3);border-radius:8px;padding:6px 12px;color:var(--x);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.mic-btn.active{background:var(--x);color:#07080f;animation:micPulse 1.4s ease-in-out infinite}
 @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,92,138,.4)}50%{box-shadow:0 0 0 6px rgba(224,92,138,0)}}
 .voice-status{font-size:11px;color:var(--hint)}
-.voice-indicators{display:flex;gap:12px}
-.voice-indicator{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
-.vi-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12);transition:background .2s,box-shadow .2s;flex-shrink:0}
-.vi-dot.speaking{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.7);animation:speakWave .5s ease-in-out infinite alternate}
-@keyframes speakWave{from{transform:scale(1)}to{transform:scale(1.4)}}
+.voice-inds{display:flex;gap:10px}
+.voice-ind{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.vi-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);flex-shrink:0;transition:background .2s}
+.vi-dot.speaking{background:#4ade80;animation:vSpeaking .5s ease-in-out infinite alternate}
+@keyframes vSpeaking{from{transform:scale(1)}to{transform:scale(1.5)}}
 
-/* ── Waiting dots ── */
-.dots{display:flex;gap:5px;justify-content:center;padding:12px 0}
+/* panel */
+.panel{background:var(--s1);border:1px solid var(--b);border-radius:16px;padding:22px;width:100%;display:flex;flex-direction:column;gap:11px;margin-bottom:12px}
+input[type=text]{background:rgba(255,255,255,.05);border:1px solid var(--b);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:14px;outline:none;width:100%}
+input[type=text]:focus{border-color:var(--x)}
+.btn{border:none;border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s,transform .1s}
+.btn:hover{opacity:.85}.btn:active{transform:scale(.98)}
+.btn-x{background:var(--x);color:#07080f}
+.btn-ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--b)}
+#statusMsg{font-size:13px;color:var(--muted);text-align:center;min-height:18px}
+
+/* dots */
+.dots{display:flex;gap:5px;justify-content:center;padding:10px 0}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--x);animation:dp 1.4s ease-in-out infinite}
-.dot:nth-child(2){animation-delay:.2s;background:var(--o)}
-.dot:nth-child(3){animation-delay:.4s}
+.dot:nth-child(2){animation-delay:.2s;background:var(--o)}.dot:nth-child(3){animation-delay:.4s}
 @keyframes dp{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.4);opacity:1}}
+
+/* game */
+#gameArea{display:none;flex-direction:column;align-items:center;width:100%;gap:12px}
+.turn-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 16px;background:var(--s1);border:1px solid var(--b);border-radius:12px;font-size:13px}
+.ptag{display:flex;align-items:center;gap:8px;font-weight:700}
+.sym{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.sym-x{background:rgba(224,92,138,.15);color:var(--x);border:1.5px solid var(--x)}
+.sym-o{background:rgba(92,168,224,.15);color:var(--o);border:1.5px solid var(--o)}
+.tarrow{font-size:13px;color:var(--muted);text-align:center;flex:1}
+
+/* board */
+#board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.cell{aspect-ratio:1;background:var(--s1);border:1.5px solid var(--b2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;padding:8px}
+.cell:hover:not(.taken):not(.off){background:var(--s2);border-color:rgba(255,255,255,.25);transform:scale(1.03)}
+.cell.taken{cursor:default}
+.cell.tx{background:rgba(224,92,138,.08);border-color:rgba(224,92,138,.35)}
+.cell.to{background:rgba(92,168,224,.08);border-color:rgba(92,168,224,.35)}
+.cell.win{animation:wPulse .6s ease-in-out infinite alternate}
+@keyframes wPulse{from{box-shadow:none}to{box-shadow:0 0 18px rgba(255,255,255,.25)}}
+.cell.off{opacity:.45;cursor:not-allowed}
+.csym{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800}
+.csym.x{color:var(--x)}.csym.o{color:var(--o)}
+.ctype{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-top:4px}
+.ctype.truth{background:rgba(155,110,224,.18);color:var(--truth)}
+.ctype.dare{background:rgba(224,139,58,.18);color:var(--dare)}
+.score-bar{display:flex;justify-content:space-between;width:100%;font-size:13px;padding:8px 16px;background:var(--s1);border:1px solid var(--b);border-radius:10px}
+.sx{color:var(--x);font-weight:700}.so{color:var(--o);font-weight:700}
+
+/* modal */
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,8,15,.9);backdrop-filter:blur(6px);z-index:50;padding:20px}
+.mcard{background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:26px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:14px}
+.mbadge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;align-self:flex-start}
+.mbadge.truth{background:rgba(155,110,224,.2);color:var(--truth);border:1px solid rgba(155,110,224,.4)}
+.mbadge.dare{background:rgba(224,139,58,.2);color:var(--dare);border:1px solid rgba(224,139,58,.4)}
+.mwho{font-size:13px;color:var(--muted)}
+.mtext{font-size:16px;line-height:1.55;font-weight:700}
+.mtext.truth{color:var(--truth)}.mtext.dare{color:var(--dare)}
+.mbtns{display:flex;gap:10px}
+.btn-yes{background:var(--x);color:#07080f;flex:1;border:none;border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.btn-no{background:rgba(255,255,255,.07);color:var(--muted);flex:1;border:1px solid var(--b);border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer}
+.mwait{font-size:13px;color:var(--muted);text-align:center}
+
+/* result */
+#result{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,8,15,.92);z-index:60;flex-direction:column;gap:14px;padding:20px}
+.rcard{background:var(--s1);border:1px solid var(--b2);border-radius:20px;padding:30px;max-width:360px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px}
+.remoji{font-size:50px}.rtitle{font-size:22px;font-weight:800}.rsub{font-size:13px;color:var(--muted)}
+.rbtns{display:flex;gap:10px;margin-top:4px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <a class="back" href="/">← Menú principal</a>
   <div class="title"><span class="x">X</span> Verdad o Reto <span class="o">O</span></div>
-  <div class="subtitle">Tres en raya · Reclama cada casilla completando el desafío</div>
+  <div class="subtitle">Tres en raya · cada casilla tiene un desafío</div>
 
-  <!-- Voice chat bar -->
-  <div class="audio-bar" id="voiceBar">
-    <div class="voice-left">
-      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️ Activar voz</button>
-      <div class="voice-status" id="voiceStatus">Voz desactivada</div>
+  <!-- Voice bar (always visible) -->
+  <div class="voice-bar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️ Voz</button>
+      <span class="voice-status" id="voiceStatus">Sin conexión de voz</span>
     </div>
-    <div class="voice-indicators">
-      <div class="voice-indicator" id="myVoiceIndicator">
-        <div class="vi-dot" id="myDot"></div>
-        <span id="myVoiceLabel">Tú</span>
-      </div>
-      <div class="voice-indicator" id="rivalVoiceIndicator">
-        <div class="vi-dot" id="rivalDot"></div>
-        <span id="rivalVoiceLabel">Rival</span>
-      </div>
+    <div class="voice-inds">
+      <div class="voice-ind"><div class="vi-dot" id="myDot"></div><span id="myVL">Yo</span></div>
+      <div class="voice-ind"><div class="vi-dot" id="rivalDot"></div><span id="rivalVL">Rival</span></div>
     </div>
   </div>
 
   <!-- Lobby -->
-  <div id="lobby" style="width:100%;margin-top:12px">
+  <div id="lobby" style="width:100%">
     <div class="panel">
-      <input id="nick" type="text" placeholder="Tu nombre…" maxlength="16" autocomplete="off">
+      <input type="text" id="nick" placeholder="Tu nombre…" maxlength="16" autocomplete="off">
       <button class="btn btn-x" id="joinBtn">▶ Buscar rival</button>
-      <p id="status"></p>
-      <div class="dots hidden" id="waitDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <p id="statusMsg"></p>
+      <div class="dots hidden" id="waitDots">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
     </div>
-    <div class="panel" style="font-size:13px;color:var(--muted);line-height:1.7;gap:6px">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">¿Cómo funciona?</div>
-      <div>🎯 Haz click en una casilla para revelar el desafío.</div>
-      <div><span style="color:var(--truth)">■ VERDAD</span> — Responde honestamente a la pregunta.</div>
-      <div><span style="color:var(--dare)">■ RETO</span> — Completa la acción en tiempo real.</div>
-      <div>✅ Si cumples, la casilla es tuya. Si fallas, la gana el rival.</div>
+    <div class="panel" style="font-size:13px;color:var(--muted);line-height:1.75">
+      <div style="font-size:14px;font-weight:700;color:var(--text)">¿Cómo funciona?</div>
+      <div>🎯 Haz click en una casilla para revelar el desafío</div>
+      <div><span style="color:var(--truth)">■ VERDAD</span> — Responde honestamente</div>
+      <div><span style="color:var(--dare)">■ RETO</span> — Completa la acción en vivo</div>
+      <div>✅ Si cumples = casilla tuya &nbsp;❌ Si fallas = casilla del rival</div>
     </div>
   </div>
 
-  <!-- Game -->
-  <div id="game-area">
+  <!-- Game area -->
+  <div id="gameArea">
     <div class="turn-bar">
-      <div class="player-tag" id="p1tag"><div class="sym sym-x">X</div><span id="p1name">Tú</span></div>
-      <div class="turn-arrow" id="turnArrow">▶</div>
-      <div class="player-tag" id="p2tag"><div class="sym sym-o">O</div><span id="p2name">Rival</span></div>
+      <div class="ptag" id="p1tag"><div class="sym sym-x">X</div><span id="p1n">—</span></div>
+      <div class="tarrow" id="tarrow">▶</div>
+      <div class="ptag" id="p2tag"><div class="sym sym-o">O</div><span id="p2n">—</span></div>
     </div>
     <div id="board"></div>
     <div class="score-bar">
-      <span class="score-x" id="scoreX">X: 0</span>
+      <span class="sx" id="scX">X: 0</span>
       <span style="color:var(--hint);font-size:11px">casillas</span>
-      <span class="score-o" id="scoreO">O: 0</span>
+      <span class="so" id="scO">O: 0</span>
     </div>
   </div>
 </div>
 
 <!-- Challenge modal -->
-<div id="challenge-modal">
-  <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <span class="modal-type-badge" id="modalBadge">VERDAD</span>
+<div id="modal">
+  <div class="mcard">
+    <span class="mbadge" id="mbadge">VERDAD</span>
+    <div class="mwho" id="mwho"></div>
+    <div class="mtext" id="mtext"></div>
+    <div class="mbtns" id="mbtns">
+      <button class="btn-yes" onclick="done(true)">✅ ¡Lo hice!</button>
+      <button class="btn-no"  onclick="done(false)">❌ Me rindo</button>
     </div>
-    <div class="modal-player" id="modalPlayer">Lowen debe completar:</div>
-    <div class="modal-challenge" id="modalText"></div>
-    <div class="modal-actions" id="modalActions">
-      <button class="btn btn-done" id="btnDone" onclick="challengeDone(true)">✅ ¡Lo hice!</button>
-      <button class="btn btn-skip" id="btnSkip" onclick="challengeDone(false)">❌ Me rindo</button>
-    </div>
-    <div class="modal-waiting hidden" id="modalWaiting">Esperando que el rival complete su reto…</div>
+    <div class="mwait hidden" id="mwait">Esperando al rival…</div>
   </div>
 </div>
 
-<!-- Result overlay -->
-<div id="result-overlay">
-  <div class="result-card">
-    <div class="result-emoji" id="resultEmoji"></div>
-    <div class="result-title" id="resultTitle"></div>
-    <div class="result-sub" id="resultSub"></div>
-    <div class="result-actions">
-      <button class="btn btn-x" id="playAgainBtn">Jugar de nuevo</button>
+<!-- Result -->
+<div id="result">
+  <div class="rcard">
+    <div class="remoji" id="remoji"></div>
+    <div class="rtitle" id="rtitle"></div>
+    <div class="rsub"   id="rsub"></div>
+    <div class="rbtns">
+      <button class="btn btn-x"    id="playAgainBtn">Jugar de nuevo</button>
       <button class="btn btn-ghost" onclick="location.href='/'">Menú</button>
     </div>
   </div>
@@ -201,313 +180,228 @@ input:focus{border-color:var(--x)}
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ── Audio SFX (Web Audio API) ──────────────────────────────────────────────
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let actx = null;
-function getACtx(){ if(!actx) actx = new AudioCtx(); return actx; }
-function playTone(freq,dur,type='sine',vol=.35){
-  try{
-    const ctx=getACtx(),g=ctx.createGain(),o=ctx.createOscillator();
-    o.type=type;o.frequency.value=freq;
-    g.gain.setValueAtTime(vol,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
-    o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+dur);
-  }catch(e){}
+// ── SFX ───────────────────────────────────────────────────────────────────────
+let _ac = null;
+function ac(){ if(!_ac) _ac = new (window.AudioContext||window.webkitAudioContext)(); return _ac; }
+function tone(f,d,t='sine',v=.3){
+  try{const c=ac(),g=c.createGain(),o=c.createOscillator();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d);}catch(e){}
 }
-function sfxClick(){ playTone(440,.1,'square',.2); }
-function sfxReveal(){ [330,440,550].forEach((f,i)=>setTimeout(()=>playTone(f,.12),i*90)); }
-function sfxSuccess(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.18,'sine',.45),i*80)); }
-function sfxFail(){ [300,250,200].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'sawtooth',.3),i*100)); }
-function sfxWin(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>playTone(f,.25,'sine',.5),i*100)); }
-
-// ── WebRTC Voice Chat ─────────────────────────────────────────────────────────
-let localStream = null;
-let peerConn    = null;
-let remoteAudio = null;
-let micActive   = false;
-let audioCtxForVAD = null;
-let analyserNode = null;
-let vadTimer = null;
-
-const ICE_SERVERS = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ]
+const sfx={
+  click:  ()=>tone(440,.09,'square',.18),
+  reveal: ()=>[330,440,550].forEach((f,i)=>setTimeout(()=>tone(f,.1),i*85)),
+  ok:     ()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.16,'sine',.4),i*75)),
+  fail:   ()=>[280,230,190].forEach((f,i)=>setTimeout(()=>tone(f,.18,'sawtooth',.28),i*95)),
+  win:    ()=>[523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,.22,'sine',.45),i*90)),
 };
 
-async function toggleMic() {
-  if (!micActive) await startVoice();
-  else stopVoice();
+// ── WebRTC voice ──────────────────────────────────────────────────────────────
+let localStream=null, pc=null, remAudio=null, micOn=false, isInit=false;
+const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+
+function vad(stream, dotId){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const src=ctx.createMediaStreamSource(stream);
+    const an=ctx.createAnalyser(); an.fftSize=512;
+    src.connect(an);
+    const buf=new Uint8Array(an.fftSize);
+    const dot=document.getElementById(dotId);
+    setInterval(()=>{
+      an.getByteTimeDomainData(buf);
+      let s=0; for(let i=0;i<buf.length;i++) s+=Math.abs(buf[i]-128);
+      dot.classList.toggle('speaking', s/buf.length > 3);
+    },80);
+  }catch(e){}
 }
 
-async function startVoice() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    micActive = true;
-    document.getElementById('micBtn').textContent  = '🔴 Microfono activo';
+async function toggleMic(){
+  if(!micOn) await startVoice(); else stopVoice();
+}
+
+async function startVoice(){
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    micOn=true;
     document.getElementById('micBtn').classList.add('active');
-    document.getElementById('voiceStatus').textContent = 'Conectando con rival…';
-    startVAD(localStream, 'myDot');
-    if (isInitiator) await createOffer();
-  } catch(e) {
-    document.getElementById('voiceStatus').textContent = 'Sin permiso de micrófono';
-    console.warn('Mic error:', e);
+    document.getElementById('micBtn').textContent='🔴 Voz activa';
+    document.getElementById('voiceStatus').textContent='Conectando…';
+    vad(localStream,'myDot');
+    if(isInit) await makeOffer();
+  }catch(e){
+    document.getElementById('voiceStatus').textContent='Sin permiso de mic';
   }
 }
 
-function stopVoice() {
-  micActive = false;
-  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-  if (peerConn)    { peerConn.close(); peerConn = null; }
-  if (remoteAudio) { remoteAudio.srcObject = null; }
-  clearInterval(vadTimer);
-  document.getElementById('micBtn').textContent = '🎙️ Activar voz';
+function stopVoice(){
+  micOn=false;
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  if(pc){pc.close();pc=null;}
+  if(remAudio) remAudio.srcObject=null;
   document.getElementById('micBtn').classList.remove('active');
-  document.getElementById('voiceStatus').textContent = 'Voz desactivada';
+  document.getElementById('micBtn').textContent='🎙️ Voz';
+  document.getElementById('voiceStatus').textContent='Sin conexión de voz';
   document.getElementById('myDot').classList.remove('speaking');
   document.getElementById('rivalDot').classList.remove('speaking');
 }
 
-function getPeer() {
-  if (peerConn) return peerConn;
-  peerConn = new RTCPeerConnection(ICE_SERVERS);
-
-  // Add local tracks
-  if (localStream) localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
-
-  // Receive remote audio
-  peerConn.ontrack = e => {
-    if (!remoteAudio) {
-      remoteAudio = document.createElement('audio');
-      remoteAudio.autoplay = true;
-      document.body.appendChild(remoteAudio);
-    }
-    remoteAudio.srcObject = e.streams[0];
-    startVAD(e.streams[0], 'rivalDot');
-    document.getElementById('voiceStatus').textContent = '🟢 Voz conectada';
-    document.getElementById('rivalVoiceLabel').textContent = rivalName || 'Rival';
+function getPc(){
+  if(pc) return pc;
+  pc=new RTCPeerConnection(ICE);
+  if(localStream) localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  pc.ontrack=e=>{
+    if(!remAudio){remAudio=document.createElement('audio');remAudio.autoplay=true;document.body.appendChild(remAudio);}
+    remAudio.srcObject=e.streams[0];
+    vad(e.streams[0],'rivalDot');
+    document.getElementById('voiceStatus').textContent='🟢 Voz conectada';
   };
-
-  peerConn.onicecandidate = e => {
-    if (e.candidate) socket.emit('rtc-ice', { candidate: e.candidate });
+  pc.onicecandidate=e=>{if(e.candidate) socket.emit('rtc-ice',{candidate:e.candidate});};
+  pc.onconnectionstatechange=()=>{
+    if(pc.connectionState==='connected') document.getElementById('voiceStatus').textContent='🟢 Voz conectada';
+    if(['disconnected','failed'].includes(pc.connectionState)) document.getElementById('voiceStatus').textContent='Voz desconectada';
   };
-
-  peerConn.onconnectionstatechange = () => {
-    if (peerConn.connectionState === 'connected')
-      document.getElementById('voiceStatus').textContent = '🟢 Voz conectada';
-    if (['disconnected','failed','closed'].includes(peerConn.connectionState))
-      document.getElementById('voiceStatus').textContent = 'Voz desconectada';
-  };
-
-  return peerConn;
+  return pc;
 }
 
-async function createOffer() {
-  const pc = getPeer();
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  socket.emit('rtc-offer', { offer });
+async function makeOffer(){
+  const p=getPc(); const offer=await p.createOffer();
+  await p.setLocalDescription(offer); socket.emit('rtc-offer',{offer});
 }
 
-socket.on('rtc-offer', async ({ offer }) => {
-  if (!micActive) return; // only answer if mic is on
-  const pc = getPeer();
-  await pc.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await pc.createAnswer();
-  await pc.setLocalDescription(answer);
-  socket.emit('rtc-answer', { answer });
+socket.on('rtc-offer', async({offer})=>{
+  if(!micOn) return;
+  const p=getPc(); await p.setRemoteDescription(new RTCSessionDescription(offer));
+  const ans=await p.createAnswer(); await p.setLocalDescription(ans);
+  socket.emit('rtc-answer',{answer:ans});
+});
+socket.on('rtc-answer', async({answer})=>{
+  if(pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+});
+socket.on('rtc-ice', async({candidate})=>{
+  try{if(pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));}catch(e){}
 });
 
-socket.on('rtc-answer', async ({ answer }) => {
-  if (!peerConn) return;
-  await peerConn.setRemoteDescription(new RTCSessionDescription(answer));
-});
+// ── Socket & game ─────────────────────────────────────────────────────────────
+const socket=io('/tictactoe');
+let mySym=null,myTurn=false;
 
-socket.on('rtc-ice', async ({ candidate }) => {
-  try { if (peerConn) await peerConn.addIceCandidate(new RTCIceCandidate(candidate)); }
-  catch(e) {}
-});
+socket.on('connect', ()=>{ console.log('connected to /tictactoe'); });
+socket.on('connect_error', (e)=>{ console.error('socket error',e); document.getElementById('statusMsg').textContent='Error de conexión'; });
 
-// Voice Activity Detection — animates the dot when someone speaks
-function startVAD(stream, dotId) {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const src = ctx.createMediaStreamSource(stream);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 512;
-    src.connect(analyser);
-    const data = new Uint8Array(analyser.fftSize);
-    const dot  = document.getElementById(dotId);
-    setInterval(() => {
-      analyser.getByteTimeDomainData(data);
-      let sum = 0;
-      for (let i=0; i<data.length; i++) sum += Math.abs(data[i]-128);
-      const vol = sum / data.length;
-      dot.classList.toggle('speaking', vol > 3);
-    }, 80);
-  } catch(e) {}
-}
-
-// ── Socket & Game ─────────────────────────────────────────────────────────────
-const socket    = io('/tictactoe');
-let mySymbol    = null;
-let myName      = '';
-let rivalName   = '';
-let myTurn      = false;
-let isInitiator = false; // X starts the WebRTC offer
-
-socket.on('waiting', () => {
-  document.getElementById('status').textContent = 'Buscando rival…';
+socket.on('waiting',()=>{
+  document.getElementById('statusMsg').textContent='Buscando rival…';
   document.getElementById('waitDots').classList.remove('hidden');
 });
 
-socket.on('gameStart', ({ mySymbol:sym, names, board, turn }) => {
-  mySymbol    = sym;
-  myName      = names[sym];
-  rivalName   = names[sym==='X'?'O':'X'];
-  isInitiator = sym === 'X';
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('game-area').style.display = 'flex';
-  const isX = sym === 'X';
-  document.getElementById('p1name').textContent = isX ? names.X : names.O;
-  document.getElementById('p2name').textContent = isX ? names.O : names.X;
-  document.getElementById('myVoiceLabel').textContent  = myName;
-  document.getElementById('rivalVoiceLabel').textContent = rivalName;
-  renderBoard(board, turn);
-  updateTurnBar(turn, names);
+socket.on('gameStart',({mySymbol:sym,names,board,turn})=>{
+  mySym=sym; isInit=(sym==='X');
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('gameArea').style.display='flex';
+  const isX=sym==='X';
+  document.getElementById('p1n').textContent=isX?names.X:names.O;
+  document.getElementById('p2n').textContent=isX?names.O:names.X;
+  document.getElementById('myVL').textContent=names[sym];
+  document.getElementById('rivalVL').textContent=names[sym==='X'?'O':'X'];
+  drawBoard(board,turn);
+  setTurn(turn,names);
 });
 
-socket.on('challengeReveal', ({ cellIndex, challenge, playerName, symbol }) => {
-  const isMine = symbol === mySymbol;
-  showModal(challenge, playerName, isMine);
-  sfxReveal();
+socket.on('challengeReveal',({challenge,playerName,symbol})=>{
+  showModal(challenge,playerName,symbol===mySym);
+  sfx.reveal();
 });
 
-socket.on('boardUpdate', ({ board, turn }) => {
-  renderBoard(board, turn);
-  updateTurnBar(turn, { X: document.getElementById('p1name').textContent, O: document.getElementById('p2name').textContent });
+socket.on('boardUpdate',({board,turn})=>{
+  drawBoard(board,turn);
+  setTurn(turn,{X:document.getElementById('p1n').textContent,O:document.getElementById('p2n').textContent});
   updateScore(board);
   closeModal();
 });
 
-socket.on('challengeFailed', ({ failedName }) => {
-  sfxFail();
-});
+socket.on('challengeFailed',()=>sfx.fail());
 
-socket.on('gameOver', ({ board, winner, winnerName, line }) => {
-  renderBoard(board, null, line);
+socket.on('gameOver',({board,winner,winnerName,line})=>{
+  drawBoard(board,null,line||[]);
   updateScore(board);
   closeModal();
-  setTimeout(() => {
-    showResult(winner, winnerName);
-    winner !== 'draw' ? sfxWin() : sfxReveal();
-  }, 500);
+  setTimeout(()=>{
+    showResult(winner,winnerName);
+    winner!=='draw'?sfx.win():sfx.reveal();
+  },400);
 });
 
-socket.on('gameReset', ({ board, turn }) => {
-  document.getElementById('result-overlay').style.display = 'none';
-  renderBoard(board, turn);
+socket.on('gameReset',({board,turn})=>{
+  document.getElementById('result').style.display='none';
+  drawBoard(board,turn);
   updateScore(board);
 });
 
-socket.on('opponentLeft', () => showResult('left', null));
+socket.on('opponentLeft',()=>showResult('left',null));
 
-// ── Board rendering ───────────────────────────────────────────────────────────
-function renderBoard(board, turn, winLine=[]) {
-  myTurn = turn === mySymbol;
-  const el = document.getElementById('board');
-  el.innerHTML = '';
-  board.forEach(cell => {
-    const div = document.createElement('div');
-    div.className = 'cell';
-    if (cell.owner) {
-      div.classList.add('taken', cell.owner==='X' ? 'taken-x' : 'taken-o');
-      if (winLine && winLine.includes(cell.index)) div.classList.add('win-line');
-      const sym = document.createElement('div');
-      sym.className = 'cell-symbol ' + (cell.owner==='X'?'x':'o');
-      sym.textContent = cell.owner;
-      div.appendChild(sym);
+// ── Board ─────────────────────────────────────────────────────────────────────
+function drawBoard(board,turn,winLine=[]){
+  myTurn=turn===mySym;
+  const el=document.getElementById('board'); el.innerHTML='';
+  board.forEach(cell=>{
+    const d=document.createElement('div'); d.className='cell';
+    if(cell.owner){
+      d.classList.add('taken',cell.owner==='X'?'tx':'to');
+      if(winLine.includes(cell.index)) d.classList.add('win');
+      const s=document.createElement('div'); s.className='csym '+(cell.owner==='X'?'x':'o'); s.textContent=cell.owner; d.appendChild(s);
     } else {
-      const ct = document.createElement('div');
-      ct.className = 'cell-type ' + (cell.challenge.type==='truth'?'truth':'dare');
-      ct.textContent = cell.challenge.type==='truth' ? 'VERDAD' : 'RETO';
-      div.appendChild(ct);
-      if (myTurn && !cell.pending) {
-        div.onclick = () => { sfxClick(); socket.emit('claimCell', { cellIndex: cell.index }); };
-      } else {
-        div.classList.add('disabled');
-      }
+      const ct=document.createElement('div');
+      ct.className='ctype '+(cell.challenge.type==='truth'?'truth':'dare');
+      ct.textContent=cell.challenge.type==='truth'?'VERDAD':'RETO';
+      d.appendChild(ct);
+      if(myTurn&&!cell.pending){ d.onclick=()=>{sfx.click();socket.emit('claimCell',{cellIndex:cell.index});}; }
+      else d.classList.add('off');
     }
-    el.appendChild(div);
+    el.appendChild(d);
   });
 }
 
-function updateTurnBar(turn, names) {
-  const isMyTurn = turn === mySymbol;
-  document.getElementById('turnArrow').textContent = isMyTurn ? '◀ Tu turno' : '▶ Turno rival';
+function setTurn(turn,names){
+  const mine=turn===mySym;
+  document.getElementById('tarrow').textContent=mine?'◀ Tu turno':'▶ Turno rival';
 }
-
-function updateScore(board) {
-  const x = board.filter(c=>c.owner==='X').length;
-  const o = board.filter(c=>c.owner==='O').length;
-  document.getElementById('scoreX').textContent = `X: ${x}`;
-  document.getElementById('scoreO').textContent = `O: ${o}`;
+function updateScore(board){
+  document.getElementById('scX').textContent='X: '+board.filter(c=>c.owner==='X').length;
+  document.getElementById('scO').textContent='O: '+board.filter(c=>c.owner==='O').length;
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-function showModal(challenge, playerName, isMine) {
-  document.getElementById('challenge-modal').style.display = 'flex';
-  const badge = document.getElementById('modalBadge');
-  badge.className = 'modal-type-badge badge-' + (challenge.type==='truth'?'truth':'dare');
-  badge.textContent = challenge.type==='truth' ? 'VERDAD' : 'RETO';
-  document.getElementById('modalPlayer').textContent = `${playerName} debe completar:`;
-  const txt = document.getElementById('modalText');
-  txt.className = 'modal-challenge ' + challenge.type;
-  txt.textContent = challenge.text;
-  document.getElementById('modalActions').classList.toggle('hidden', !isMine);
-  document.getElementById('modalWaiting').classList.toggle('hidden', isMine);
+function showModal(ch,who,mine){
+  document.getElementById('modal').style.display='flex';
+  const b=document.getElementById('mbadge');
+  b.className='mbadge '+(ch.type==='truth'?'truth':'dare');
+  b.textContent=ch.type==='truth'?'VERDAD':'RETO';
+  document.getElementById('mwho').textContent=who+' debe completar:';
+  const t=document.getElementById('mtext');
+  t.className='mtext '+ch.type; t.textContent=ch.text;
+  document.getElementById('mbtns').classList.toggle('hidden',!mine);
+  document.getElementById('mwait').classList.toggle('hidden',mine);
 }
-
-function closeModal() {
-  document.getElementById('challenge-modal').style.display = 'none';
-}
-
-function challengeDone(success) {
-  socket.emit('challengeDone', { success });
-  success ? sfxSuccess() : sfxFail();
-  closeModal();
-}
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function done(ok){ socket.emit('challengeDone',{success:ok}); ok?sfx.ok():sfx.fail(); closeModal(); }
 
 // ── Result ────────────────────────────────────────────────────────────────────
-function showResult(winner, winnerName) {
-  document.getElementById('result-overlay').style.display = 'flex';
-  const isMe = winner === mySymbol;
-  if (winner==='draw') {
-    document.getElementById('resultEmoji').textContent  = '🤝';
-    document.getElementById('resultTitle').textContent  = '¡Empate!';
-    document.getElementById('resultSub').textContent    = 'Ninguno dominó el tablero.';
-  } else if (winner==='left') {
-    document.getElementById('resultEmoji').textContent  = '🏃';
-    document.getElementById('resultTitle').textContent  = 'Rival desconectado';
-    document.getElementById('resultSub').textContent    = 'La partida se canceló.';
-  } else {
-    document.getElementById('resultEmoji').textContent  = isMe ? '🏆' : '😔';
-    document.getElementById('resultTitle').textContent  = isMe ? '¡Ganaste!' : 'Perdiste';
-    document.getElementById('resultSub').textContent    = `${winnerName} gana esta partida.`;
-  }
+function showResult(w,wName){
+  document.getElementById('result').style.display='flex';
+  const me=w===mySym;
+  if(w==='draw'){document.getElementById('remoji').textContent='🤝';document.getElementById('rtitle').textContent='¡Empate!';document.getElementById('rsub').textContent='Nadie dominó el tablero.';}
+  else if(w==='left'){document.getElementById('remoji').textContent='🏃';document.getElementById('rtitle').textContent='Rival desconectado';document.getElementById('rsub').textContent='Partida cancelada.';}
+  else{document.getElementById('remoji').textContent=me?'🏆':'😔';document.getElementById('rtitle').textContent=me?'¡Ganaste!':'Perdiste';document.getElementById('rsub').textContent=wName+' gana esta partida.';}
 }
 
-// ── Lobby bindings ────────────────────────────────────────────────────────────
-document.getElementById('joinBtn').onclick = () => {
-  const n = document.getElementById('nick').value.trim() || 'Jugador';
-  myName = n;
-  sfxClick();
-  socket.emit('join', { name: n });
-  document.getElementById('joinBtn').disabled = true;
+// ── Lobby ─────────────────────────────────────────────────────────────────────
+document.getElementById('joinBtn').onclick=()=>{
+  const n=document.getElementById('nick').value.trim()||'Jugador';
+  sfx.click();
+  socket.emit('join',{name:n});
+  document.getElementById('joinBtn').disabled=true;
+  document.getElementById('statusMsg').textContent='Conectando…';
 };
-document.getElementById('nick').onkeydown = e => { if(e.key==='Enter') document.getElementById('joinBtn').click(); };
-document.getElementById('playAgainBtn').onclick = () => { sfxClick(); socket.emit('playAgain'); };
+document.getElementById('nick').onkeydown=e=>{if(e.key==='Enter')document.getElementById('joinBtn').click();};
+document.getElementById('playAgainBtn').onclick=()=>{sfx.click();socket.emit('playAgain');};
 </script>
 </body>
 </html>
