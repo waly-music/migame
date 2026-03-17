@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivia</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05070f;color:#e8eaf0;font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px}
+a.back{font-size:12px;color:rgba(232,234,240,.35);text-decoration:none;align-self:flex-start;margin-bottom:16px}
+a.back:hover{color:#DDA0DD}
+h1{font-size:30px;font-weight:800;margin-bottom:4px;color:#DDA0DD}
+.sub{font-size:13px;color:rgba(232,234,240,.4);margin-bottom:24px;text-align:center}
+.panel{background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:12px}
+input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 14px;color:#e8eaf0;font-family:'Syne',sans-serif;font-size:14px;outline:none;width:100%}
+input:focus{border-color:#DDA0DD}
+.btn{border:none;border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%}
+.btn-primary{background:#DDA0DD;color:#05070f}
+.btn-secondary{background:rgba(255,255,255,.08);color:#e8eaf0}
+.btn:hover{opacity:.88}
+#msg{font-size:13px;color:#FFCB47;text-align:center;min-height:18px}
+#lobby-panel,.view{display:none}
+#lobby-panel.active,.view.active{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;max-width:440px}
+#start-panel{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%;max-width:440px}
+.room-code{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:#DDA0DD;letter-spacing:6px;text-align:center}
+.code-label{font-size:12px;color:rgba(232,234,240,.4);text-align:center}
+.player-list{list-style:none;width:100%;display:flex;flex-direction:column;gap:6px}
+.player-list li{background:rgba(255,255,255,.05);border-radius:8px;padding:8px 14px;font-size:13px}
+.q-card{background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;width:100%;max-width:500px}
+.q-num{font-size:11px;color:rgba(232,234,240,.4);font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+.q-text{font-size:17px;font-weight:700;margin-bottom:20px;line-height:1.4}
+.timer-bar{height:4px;background:#DDA0DD;border-radius:2px;transition:width 1s linear;margin-bottom:16px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opt{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;font-family:'Syne',sans-serif;font-size:13px;cursor:pointer;text-align:left;color:#e8eaf0;transition:background .15s}
+.opt:hover:not(:disabled){background:rgba(221,160,221,.15);border-color:#DDA0DD}
+.opt.correct{background:#3B6D11;border-color:#639922;color:#fff}
+.opt.wrong{background:#791F1F;border-color:#E24B4A;color:#fff}
+.opt:disabled{cursor:default}
+.scores-list{list-style:none;width:100%;max-width:440px;display:flex;flex-direction:column;gap:6px}
+.scores-list li{display:flex;justify-content:space-between;align-items:center;background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;font-size:14px}
+.scores-list li:first-child{border-color:#DDA0DD;color:#DDA0DD;font-weight:700}
+.gold{color:#ffd700}
+</style>
+</head>
+<body>
+<a class="back" href="/">← Menú principal</a>
+<h1>🧠 Trivia</h1>
+<p class="sub">Crea una sala, comparte el código con tus amigos y compite</p>
+
+<div id="start-panel">
+  <div class="panel">
+    <input id="nick" type="text" placeholder="Tu nombre…" maxlength="16" autocomplete="off">
+    <button class="btn btn-primary" id="createBtn">+ Crear sala</button>
+    <div style="display:flex;gap:8px">
+      <input id="codeInput" type="text" placeholder="Código de sala…" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;font-family:'JetBrains Mono',monospace">
+      <button class="btn btn-secondary" id="joinBtn" style="width:auto;white-space:nowrap;padding:12px 18px">Unirse</button>
+    </div>
+    <p id="msg"></p>
+  </div>
+</div>
+
+<div id="lobby-panel">
+  <p class="code-label">Código de sala · comparte con tus amigos</p>
+  <div class="room-code" id="roomCodeDisplay"></div>
+  <div class="panel" style="padding:16px">
+    <p style="font-size:12px;color:rgba(232,234,240,.4);margin-bottom:8px">Jugadores conectados</p>
+    <ul class="player-list" id="playerList"></ul>
+  </div>
+  <button class="btn btn-primary" id="startBtn" style="max-width:440px;width:100%;display:none">▶ Iniciar juego</button>
+  <p style="font-size:12px;color:rgba(232,234,240,.3);text-align:center">Esperando al anfitrión…</p>
+</div>
+
+<div id="question-view" class="view">
+  <div class="q-card">
+    <div class="q-num" id="qNum">Pregunta 1 / 10</div>
+    <div class="q-text" id="qText"></div>
+    <div class="timer-bar" id="timerBar"></div>
+    <div class="opts" id="optsContainer"></div>
+  </div>
+  <p id="qMsg" style="font-size:13px;color:rgba(232,234,240,.4);min-height:18px"></p>
+</div>
+
+<div id="result-view" class="view">
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="font-size:36px;margin-bottom:8px">🏆</div>
+    <h2 style="font-size:22px;font-weight:800" id="winnerText"></h2>
+  </div>
+  <ul class="scores-list" id="finalList"></ul>
+  <button class="btn btn-primary" onclick="location.reload()" style="max-width:440px;width:100%;margin-top:8px">Jugar de nuevo</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io('/trivia');
+let isHost=false,myRoomId=null,timerInt=null;
+
+function show(id){
+  ['start-panel','lobby-panel','question-view','result-view'].forEach(v=>{
+    const el=document.getElementById(v);
+    if(el) el.style.display=v===id?'flex':'none';
+    if(el) el.classList.toggle('active',v===id);
+  });
+}
+
+document.getElementById('createBtn').onclick=()=>{
+  const n=document.getElementById('nick').value.trim()||'Host';
+  socket.emit('createRoom',{name:n});isHost=true;
+};
+document.getElementById('joinBtn').onclick=()=>{
+  const n=document.getElementById('nick').value.trim()||'Player';
+  const code=document.getElementById('codeInput').value.toUpperCase().trim();
+  if(!code){document.getElementById('msg').textContent='Ingresa un código';return;}
+  socket.emit('joinRoom',{name:n,roomId:code});
+};
+document.getElementById('nick').onkeydown=e=>{if(e.key==='Enter')document.getElementById('createBtn').click();};
+
+socket.on('roomCreated',({roomId})=>{
+  myRoomId=roomId;
+  document.getElementById('roomCodeDisplay').textContent=roomId;
+  document.getElementById('startBtn').style.display='block';
+  show('lobby-panel');
+});
+socket.on('triviaLobby',({players,roomId})=>{
+  myRoomId=roomId;
+  if(document.getElementById('start-panel').style.display!=='none') show('lobby-panel');
+  document.getElementById('roomCodeDisplay').textContent=roomId;
+  document.getElementById('playerList').innerHTML=players.map(p=>`<li>${p.name}</li>`).join('');
+  if(isHost) document.getElementById('startBtn').style.display='block';
+});
+document.getElementById('startBtn').onclick=()=>socket.emit('startGame');
+
+socket.on('triviaQuestion',({q,opts,num,total,time})=>{
+  show('question-view');
+  document.getElementById('qNum').textContent=`Pregunta ${num} / ${total}`;
+  document.getElementById('qText').textContent=q;
+  document.getElementById('qMsg').textContent='';
+  const bar=document.getElementById('timerBar');bar.style.width='100%';
+  const cont=document.getElementById('optsContainer');
+  cont.innerHTML=opts.map((o,i)=>`<button class="opt" data-idx="${i}" onclick="answer(${i})">${o}</button>`).join('');
+  let t=time;clearInterval(timerInt);
+  timerInt=setInterval(()=>{t--;bar.style.width=(t/time*100)+'%';if(t<=0)clearInterval(timerInt);},1000);
+});
+
+function answer(idx){
+  socket.emit('answer',{idx});
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  document.getElementById('qMsg').textContent='Respuesta enviada…';
+}
+
+socket.on('answerResult',({correct,correct_idx})=>{
+  document.querySelectorAll('.opt').forEach(b=>{
+    const i=parseInt(b.dataset.idx);
+    if(i===correct_idx) b.classList.add('correct');
+    else if(b.disabled&&i!==correct_idx&&!b.classList.contains('correct')) b.classList.add('wrong');
+  });
+  document.getElementById('qMsg').textContent=correct?'✅ ¡Correcto!':'❌ Incorrecto';
+});
+
+socket.on('triviaReveal',({correct_idx,scores})=>{
+  clearInterval(timerInt);
+  document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(parseInt(b.dataset.idx)===correct_idx)b.classList.add('correct');});
+});
+
+socket.on('triviaEnd',({scores})=>{
+  clearInterval(timerInt);show('result-view');
+  document.getElementById('winnerText').textContent=`🥇 ${scores[0]?.name||'?'} gana!`;
+  document.getElementById('finalList').innerHTML=scores.map((s,i)=>`<li><span>${['🥇','🥈','🥉'][i]||'#'+(i+1)} ${s.name}</span><span class="${i===0?'gold':''}">${s.score} pts</span></li>`).join('');
+});
+
+socket.on('error',msg=>document.getElementById('msg').textContent=msg);
+</script>
+</body>
+</html>

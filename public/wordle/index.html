@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wordle VS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05070f;color:#e8eaf0;font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+a.back{font-size:12px;color:rgba(232,234,240,.35);text-decoration:none;align-self:flex-start;margin-bottom:16px}
+a.back:hover{color:#7df3e1}
+h1{font-size:30px;font-weight:800;margin-bottom:4px;color:#7df3e1}
+.sub{font-size:13px;color:rgba(232,234,240,.4);margin-bottom:24px}
+#lobby{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:340px}
+#lobby input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#e8eaf0;font-family:'Syne',sans-serif;font-size:15px;outline:none}
+#lobby input:focus{border-color:#7df3e1}
+#lobby button{width:100%;background:#7df3e1;color:#05070f;border:none;border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+#lobby button:hover{opacity:.88}
+#status{font-size:13px;color:#FFCB47;text-align:center;min-height:18px}
+#game{display:none;flex-direction:column;align-items:center;gap:12px;width:100%}
+.vs-bar{display:flex;justify-content:space-between;width:100%;max-width:420px;font-size:14px;font-weight:700;padding:10px 16px;background:rgba(255,255,255,.05);border-radius:10px}
+.vs-bar .you{color:#7df3e1}.vs-bar .opp{color:#FF6B6B}
+.opp-status{font-size:12px;color:rgba(232,234,240,.45);text-align:center}
+#board{display:flex;flex-direction:column;gap:5px;margin:4px 0}
+.row-g{display:flex;gap:5px}
+.cell{width:52px;height:52px;border:2px solid rgba(255,255,255,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;text-transform:uppercase;transition:background .2s,border-color .2s}
+.cell.correct{background:#3B6D11;border-color:#639922;color:#fff}
+.cell.present{background:#854F0B;border-color:#EF9F27;color:#fff}
+.cell.absent{background:#2C2C2A;border-color:#444;color:#888}
+.cell.active{border-color:#7df3e1}
+#keyboard{display:flex;flex-direction:column;gap:6px;align-items:center}
+.kb-row{display:flex;gap:5px}
+.kb-key{background:rgba(255,255,255,.1);border:none;border-radius:6px;color:#e8eaf0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;padding:13px 10px;min-width:34px;text-transform:uppercase;transition:background .15s}
+.kb-key:hover{background:rgba(255,255,255,.18)}
+.kb-key.correct{background:#3B6D11;color:#fff}
+.kb-key.present{background:#854F0B;color:#fff}
+.kb-key.absent{background:#1a1a1a;color:#555}
+.kb-key.wide{min-width:58px;font-size:11px}
+#result{display:none;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:20px;background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:16px;max-width:340px}
+#result h2{font-size:22px;font-weight:700}
+.word-reveal{font-size:18px;font-family:'JetBrains Mono',monospace;color:#7df3e1;letter-spacing:4px}
+</style>
+</head>
+<body>
+<a class="back" href="/">← Menú principal</a>
+<h1>🟩 Wordle VS</h1>
+<p class="sub">Adivina la misma palabra que tu rival · Gana en menos intentos</p>
+<div id="lobby">
+  <input id="nick" type="text" placeholder="Tu nombre…" maxlength="16" autocomplete="off">
+  <button id="joinBtn">▶ Buscar rival</button>
+  <p id="status"></p>
+</div>
+<div id="game">
+  <div class="vs-bar"><span class="you" id="youName">Tú</span><span style="color:rgba(232,234,240,.3)">VS</span><span class="opp" id="oppName">Rival</span></div>
+  <div class="opp-status" id="oppStatus">Rival: 0/6 intentos</div>
+  <div id="board"></div>
+  <div id="keyboard"></div>
+</div>
+<div id="result">
+  <h2 id="resultTitle"></h2>
+  <p style="font-size:13px;color:rgba(232,234,240,.5)">La palabra era</p>
+  <div class="word-reveal" id="revealWord"></div>
+  <div id="finalScores" style="font-size:13px;color:rgba(232,234,240,.5)"></div>
+  <button onclick="location.reload()" style="background:#7df3e1;color:#05070f;border:none;border-radius:10px;padding:10px 24px;font-family:Syne,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Jugar de nuevo</button>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io('/wordle');
+const ROWS=6,COLS=5;
+let myId=null,currentRow=0,currentCol=0,gameOver=false;
+const guessGrid=[];
+const keyState={};
+
+function buildBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  for(let r=0;r<ROWS;r++){
+    const row=document.createElement('div');row.className='row-g';
+    const rowCells=[];
+    for(let c=0;c<COLS;c++){const cell=document.createElement('div');cell.className='cell';row.appendChild(cell);rowCells.push(cell);}
+    board.appendChild(row);guessGrid.push(rowCells);
+  }
+}
+
+function buildKeyboard(){
+  const rows=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];
+  const kb=document.getElementById('keyboard');kb.innerHTML='';
+  rows.forEach(keys=>{
+    const row=document.createElement('div');row.className='kb-row';
+    keys.forEach(k=>{
+      const btn=document.createElement('button');
+      btn.className='kb-key'+(k==='ENTER'||k==='⌫'?' wide':'');
+      btn.textContent=k;btn.dataset.key=k;
+      btn.onclick=()=>handleKey(k);
+      row.appendChild(btn);
+    });
+    kb.appendChild(row);
+  });
+}
+
+function handleKey(k){
+  if(gameOver) return;
+  if(k==='⌫'||k==='Backspace'){if(currentCol>0){currentCol--;guessGrid[currentRow][currentCol].textContent='';guessGrid[currentRow][currentCol].classList.remove('active');if(currentCol>0)guessGrid[currentRow][currentCol-1].classList.add('active');}}
+  else if(k==='ENTER'||k==='Enter'){
+    if(currentCol<5){return;}
+    const word=guessGrid[currentRow].map(c=>c.textContent).join('');
+    socket.emit('guess',{guess:word});
+  }
+  else if(/^[A-Za-z]$/.test(k)&&currentCol<5){
+    guessGrid[currentRow][currentCol].textContent=k.toUpperCase();
+    guessGrid[currentRow][currentCol].classList.remove('active');
+    currentCol++;
+    if(currentCol<5) guessGrid[currentRow][currentCol].classList.add('active');
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) return;
+  handleKey(e.key==='Backspace'?'⌫':e.key==='Enter'?'ENTER':e.key);
+});
+
+socket.on('waiting',()=>{document.getElementById('status').textContent='Buscando rival...';});
+socket.on('wordleStart',({myId:id,opponent})=>{
+  myId=id;
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game').style.display='flex';
+  document.getElementById('youName').textContent=document.getElementById('nick').value||'Tú';
+  document.getElementById('oppName').textContent=opponent;
+  buildBoard();buildKeyboard();
+  guessGrid[0][0].classList.add('active');
+});
+socket.on('guessResult',({guess,result,guessNum})=>{
+  result.forEach((r,i)=>{
+    const cell=guessGrid[currentRow][i];
+    cell.className='cell '+r;
+    const key=[...document.querySelectorAll('.kb-key')].find(k=>k.dataset.key===guess[i]);
+    if(key&&r==='correct') key.className='kb-key correct';
+    else if(key&&r==='present'&&!key.classList.contains('correct')) key.className='kb-key present';
+    else if(key&&r==='absent'&&!key.classList.contains('correct')&&!key.classList.contains('present')) key.className='kb-key absent';
+  });
+  currentRow++;currentCol=0;
+  if(currentRow<ROWS) guessGrid[currentRow][0].classList.add('active');
+});
+socket.on('opponentProgress',({guesses,solved})=>{
+  document.getElementById('oppStatus').textContent=`Rival: ${guesses}/6 intentos${solved?' ✅':''}`;
+});
+socket.on('wordleEnd',({winner,word,scores,abandoned})=>{
+  gameOver=true;
+  document.getElementById('game').style.display='none';
+  const res=document.getElementById('result');res.style.display='flex';
+  const myName=document.getElementById('youName').textContent;
+  document.getElementById('resultTitle').textContent=abandoned?'Rival desconectado':winner===myName?'🏆 ¡Ganaste!':'😔 Perdiste';
+  document.getElementById('revealWord').textContent=word;
+  document.getElementById('finalScores').innerHTML=scores.map(s=>`${s.name}: ${s.solved?s.guesses+' intentos':'No resolvió'}`).join('<br>');
+});
+
+document.getElementById('joinBtn').onclick=()=>{
+  const n=document.getElementById('nick').value.trim()||'Player';
+  document.getElementById('status').textContent='Buscando rival...';
+  socket.emit('join',{name:n});
+};
+document.getElementById('nick').onkeydown=e=>{if(e.key==='Enter')document.getElementById('joinBtn').click();};
+</script>
+</body>
+</html>

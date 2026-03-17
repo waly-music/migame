@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pong 1v1</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05070f;color:#e8eaf0;font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+a.back{position:fixed;top:16px;left:16px;font-size:12px;color:rgba(232,234,240,.3);text-decoration:none}
+a.back:hover{color:#FFCB47}
+#screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a130a,#05070f);z-index:10}
+.panel{background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px 44px;width:min(380px,92vw);text-align:center;display:flex;flex-direction:column;gap:14px}
+h1{font-size:32px;font-weight:800;color:#FFCB47}
+.sub{font-size:13px;color:rgba(232,234,240,.4)}
+input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 16px;color:#e8eaf0;font-family:'Syne',sans-serif;font-size:15px;outline:none}
+input:focus{border-color:#FFCB47}
+button{background:#FFCB47;color:#05070f;border:none;border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+button:hover{opacity:.88}
+#msg{font-size:13px;color:rgba(232,234,240,.4);min-height:18px}
+#gameWrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px}
+#scoreBar{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;display:flex;gap:32px;align-items:center;color:rgba(232,234,240,.7)}
+#you-score{color:#FFCB47}#opp-score{color:#FF6B6B}
+canvas{display:block;border:1px solid rgba(255,255,255,.08);border-radius:6px;cursor:none}
+#end{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,7,15,.85);z-index:20;flex-direction:column;gap:16px}
+#end h2{font-size:28px;font-weight:800}
+#end button{background:#FFCB47;color:#05070f;border:none;border-radius:10px;padding:12px 28px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<a class="back" href="/">← Menú</a>
+<div id="screen">
+  <div class="panel">
+    <h1>🏓 Pong 1v1</h1>
+    <p class="sub">Matchmaking automático · Primero en llegar a 7 gana</p>
+    <input id="nick" type="text" placeholder="Tu nombre…" maxlength="16" autocomplete="off">
+    <button id="joinBtn">▶ Buscar rival</button>
+    <p id="msg"></p>
+  </div>
+</div>
+<div id="gameWrap" style="display:none">
+  <div id="scoreBar">
+    <span><span id="youName">Tú</span>: <span id="you-score">0</span></span>
+    <span style="font-size:13px;color:rgba(232,234,240,.3)">vs</span>
+    <span><span id="oppName">Rival</span>: <span id="opp-score">0</span></span>
+  </div>
+  <canvas id="c"></canvas>
+  <p style="font-size:11px;color:rgba(232,234,240,.25)">Mueve el ratón para controlar tu paleta</p>
+</div>
+<div id="end">
+  <h2 id="endTitle"></h2>
+  <p id="endScore" style="font-size:15px;color:rgba(232,234,240,.5)"></p>
+  <button onclick="location.reload()">Jugar de nuevo</button>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io('/pong');
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const SRW=800,SRH=500,PAD_W=12,PAD_H=80,PAD_X=30;
+let myId=null,mySide=null,state=null,myNames={};
+let mouseY=SRH/2,scale=1;
+
+function setSize(){
+  const maxW=Math.min(window.innerWidth-32,720);
+  const maxH=Math.min(window.innerHeight-100,450);
+  scale=Math.min(maxW/SRW,maxH/SRH);
+  canvas.width=SRW*scale;canvas.height=SRH*scale;
+}
+window.addEventListener('resize',setSize);setSize();
+
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  mouseY=(e.clientY-rect.top)/scale;
+  socket.emit('paddle',{y:mouseY});
+});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  mouseY=(e.touches[0].clientY-rect.top)/scale;
+  socket.emit('paddle',{y:mouseY});
+},{passive:false});
+
+socket.on('waiting',()=>document.getElementById('msg').textContent='Buscando rival…');
+socket.on('pongStart',({roomId,side,myId:id,names})=>{
+  myId=id;mySide=side;myNames=names;
+  const ids=Object.keys(names);
+  const myName=names[myId]||'Tú';
+  const oppId=ids.find(i=>i!==myId);
+  const oppName=names[oppId]||'Rival';
+  document.getElementById('youName').textContent=myName;
+  document.getElementById('oppName').textContent=oppName;
+  document.getElementById('screen').style.display='none';
+  document.getElementById('gameWrap').style.display='flex';
+});
+
+socket.on('pongState',data=>{
+  state=data;draw(data);
+  const ids=Object.keys(data.score);
+  const myScore=data.score[myId]||0;
+  const oppId=ids.find(i=>i!==myId);
+  const oppScore=data.score[oppId]||0;
+  document.getElementById('you-score').textContent=myScore;
+  document.getElementById('opp-score').textContent=oppScore;
+});
+
+socket.on('pongEnd',({winner,score,abandoned})=>{
+  const end=document.getElementById('end');end.style.display='flex';
+  const myName=myNames[myId]||'Tú';
+  document.getElementById('endTitle').textContent=abandoned?'Rival desconectado 🏃':winner===myName?'🏆 ¡Ganaste!':'😔 Perdiste';
+  if(score){
+    const ids=Object.keys(score);
+    const myS=score[myId]||0;const oppId=ids.find(i=>i!==myId);const oppS=score[oppId]||0;
+    document.getElementById('endScore').textContent=`${myS} - ${oppS}`;
+  }
+});
+
+function draw(data){
+  const s=scale;
+  ctx.fillStyle='#05070f';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.setLineDash([8*s,8*s]);ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=2*s;
+  ctx.beginPath();ctx.moveTo(canvas.width/2,0);ctx.lineTo(canvas.width/2,canvas.height);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,255,255,.06)';ctx.beginPath();ctx.arc(canvas.width/2,canvas.height/2,40*s,0,Math.PI*2);ctx.fill();
+  if(data.ball){ctx.fillStyle='#FFCB47';ctx.shadowColor='#FFCB47';ctx.shadowBlur=16*s;ctx.beginPath();ctx.arc(data.ball.x*s,data.ball.y*s,10*s,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+  if(data.paddles){
+    const ids=Object.keys(data.paddles);
+    ids.forEach((id,i)=>{
+      const y=data.paddles[id];
+      const isMe=id===myId;
+      const x=(isMe?(mySide==='left'?PAD_X:SRW-PAD_X-PAD_W):(mySide==='left'?SRW-PAD_X-PAD_W:PAD_X))*s;
+      ctx.fillStyle=isMe?'#FFCB47':'#FF6B6B';
+      ctx.shadowColor=isMe?'#FFCB47':'#FF6B6B';ctx.shadowBlur=10*s;
+      ctx.beginPath();ctx.roundRect(x,(y-PAD_H/2)*s,PAD_W*s,PAD_H*s,4*s);ctx.fill();ctx.shadowBlur=0;
+    });
+  }
+}
+
+document.getElementById('joinBtn').onclick=()=>{
+  const n=document.getElementById('nick').value.trim()||'Player';
+  socket.emit('join',{name:n});
+};
+document.getElementById('nick').onkeydown=e=>{if(e.key==='Enter')document.getElementById('joinBtn').click();};
+</script>
+</body>
+</html>

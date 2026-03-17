@@ -1,54 +1,64 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CellWars</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GameHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05070f;color:#e8eaf0;font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+h1{font-size:48px;font-weight:800;letter-spacing:-2px;margin-bottom:8px}
+h1 span{color:#7df3e1}
+.sub{color:rgba(232,234,240,.5);font-size:15px;margin-bottom:48px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;width:100%;max-width:900px}
+.card{background:#0d1117;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px;cursor:pointer;text-decoration:none;color:inherit;transition:transform .15s,border-color .15s;display:block}
+.card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.2)}
+.icon{font-size:36px;margin-bottom:14px}
+.game-name{font-size:20px;font-weight:700;margin-bottom:6px}
+.game-desc{font-size:13px;color:rgba(232,234,240,.5);line-height:1.5;margin-bottom:14px}
+.tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
+.tag-hot{background:rgba(255,107,107,.15);color:#ff6b6b}
+.tag-new{background:rgba(125,243,225,.15);color:#7df3e1}
+.tag-vs{background:rgba(255,203,71,.15);color:#ffcb47}
+.footer{margin-top:48px;font-size:12px;color:rgba(232,234,240,.25)}
+</style>
 </head>
 <body>
-
-  <canvas id="gameCanvas"></canvas>
-
-  <!-- ── Start / Death Screen ───────────────────────────────────────────── -->
-  <div id="startScreen">
-    <div class="start-panel">
-      <div class="logo">
-        <span class="logo-cell"></span>
-        CellWars
-      </div>
-      <p id="deathMessage" class="death-msg"></p>
-      <div class="input-row">
-        <input id="nicknameInput" type="text" placeholder="Tu nombre de célula…" maxlength="20" autocomplete="off">
-        <button id="startBtn">▶ Jugar</button>
-      </div>
-      <ul class="tips">
-        <li>🖱️ Mueve el ratón para moverte</li>
-        <li>🍕 Come comida para crecer</li>
-        <li>💀 Evita células más grandes que tú</li>
-        <li>👑 Sé el más grande del servidor</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- ── HUD ────────────────────────────────────────────────────────────── -->
-  <div id="hud">
-    <div id="massDisplay" class="hud-pill">Mass: 10</div>
-    <div id="scoreDisplay" class="hud-pill">Score: 0</div>
-  </div>
-
-  <div id="leaderboard">
-    <div class="lb-title">🏆 Top 10</div>
-    <ol id="leaderboardList"></ol>
-  </div>
-
-  <div id="minimap">
-    <canvas id="minimapCanvas" width="140" height="140"></canvas>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="game.js"></script>
+<h1>Game<span>Hub</span></h1>
+<p class="sub">Juega con tus amigos en tiempo real</p>
+<div class="grid">
+  <a class="card" href="/cellwars/">
+    <div class="icon">🦠</div>
+    <div class="game-name">CellWars</div>
+    <div class="game-desc">Come células más pequeñas y domina el servidor. Clásico Agar.io multijugador.</div>
+    <span class="tag tag-hot">MULTIJUGADOR</span>
+  </a>
+  <a class="card" href="/snake/">
+    <div class="icon">🐍</div>
+    <div class="game-name">Snake Battle</div>
+    <div class="game-desc">Hasta 6 jugadores. Come comida, crece y elimina a los demás. Partidas de 60s.</div>
+    <span class="tag tag-hot">HASTA 6</span>
+  </a>
+  <a class="card" href="/wordle/">
+    <div class="icon">🟩</div>
+    <div class="game-name">Wordle VS</div>
+    <div class="game-desc">Adivina la misma palabra que tu rival. Gana quien lo resuelva en menos intentos.</div>
+    <span class="tag tag-vs">1 VS 1</span>
+  </a>
+  <a class="card" href="/trivia/">
+    <div class="icon">🧠</div>
+    <div class="game-name">Trivia</div>
+    <div class="game-desc">Crea una sala e invita a tus amigos. 10 preguntas, responde rápido para más puntos.</div>
+    <span class="tag tag-new">SALAS</span>
+  </a>
+  <a class="card" href="/pong/">
+    <div class="icon">🏓</div>
+    <div class="game-name">Pong 1v1</div>
+    <div class="game-desc">El clásico reinventado. Matchmaking automático. Primero en llegar a 7 puntos gana.</div>
+    <span class="tag tag-vs">1 VS 1</span>
+  </a>
+</div>
+<p class="footer">GameHub · Todos los juegos son multijugador en tiempo real</p>
 </body>
 </html>
