@@ -172,126 +172,133 @@ updateTrustBar();
 
 // ── Story nodes ───────────────────────────────────────────────────────────────
 // type: narration | dialogue | thought | manuscript | choice | chapter | end | ms-read
+// Índices verificados manualmente — cada nodo sabe exactamente adónde apunta
+// 0-11: Cap1  12-17: Cap2  18-24: Cap3  25-32: Cap4  33-37: Cap5
+// 38-46: Cap6  47-56: Cap7  57-65: Cap8  66-73: Epílogo
 const STORY = [
-  // ── CAPÍTULO 1: Manhattan ─────────────────────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 1', title:'Manhattan', bg:'manhattan' },
-  { type:'narration', text:'Manhattan, un martes cualquiera. El sol apenas calienta el asfalto cuando el semáforo cambia y la multitud avanza.' },
-  { type:'narration', text:'Oigo el crujido del cráneo antes de que la sangre me salpique la blusa.' },
-  { type:'narration', text:'El hombre estaba justo delante de mí. Miraba el móvil. Bajó a la calzada sin mirar y el camión lo arrolló.' },
-  { type:'thought', speaker:'Lowen', text:'«Acabo de ver morir a un hombre. Su sangre está en mi ropa. Y tengo una reunión en cinco minutos.»' },
-  { type:'narration', text:'Entonces una voz a mi espalda:' },
-  { type:'dialogue', speaker:'Desconocido', text:'¿Te has hecho daño?' },
-  { type:'narration', text:'Me giro. Un hombre de unos treinta años me mira con preocupación genuina. No es neoyorquino —los neoyorquinos no preguntan esas cosas.' },
-  { type:'thought', speaker:'Lowen', text:'«La sangre no es mía», le digo. Y añado lo que no debería: «Estaba al lado de él cuando ocurrió».»' },
-  { type:'narration', text:'Me lleva a una cafetería. Me presta su camisa blanca. Su nombre, descubro después, es Jeremy Crawford.' },
-  { type:'narration', text:'Y resulta que él también tiene una reunión en Pantem Press. La misma reunión que yo.' },
-  { type:'choice', choices:[
-    { text:'«Es una coincidencia extraña»', effect: 5, type:'distrust', next: 12 },
-    { text:'«A veces el destino actúa así»', effect: -5, type:'trust', next: 12 },
+  // ── CAPÍTULO 1 (0-11) ──────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 1', title:'Manhattan', bg:'manhattan' },          // 0
+  { type:'narration', text:'Manhattan, un martes cualquiera. El sol apenas calienta el asfalto cuando el semáforo cambia y la multitud avanza.' },  // 1
+  { type:'narration', text:'Oigo el crujido del cráneo antes de que la sangre me salpique la blusa.' },  // 2
+  { type:'narration', text:'El hombre estaba justo delante de mí. Miraba el móvil. Bajó a la calzada sin mirar y el camión lo arrolló.' },  // 3
+  { type:'thought',   speaker:'Lowen', text:'«Acabo de ver morir a un hombre. Su sangre está en mi ropa. Y tengo una reunión en cinco minutos.»' },  // 4
+  { type:'narration', text:'Entonces una voz a mi espalda:' },  // 5
+  { type:'dialogue',  speaker:'Desconocido', text:'¿Te has hecho daño?' },  // 6
+  { type:'narration', text:'Me giro. Un hombre de unos treinta años me mira con preocupación genuina. No es neoyorquino — los neoyorquinos no preguntan esas cosas.' },  // 7
+  { type:'thought',   speaker:'Lowen', text:'«La sangre no es mía», le digo. Y añado lo que no debería: «Estaba al lado de él cuando ocurrió».' },  // 8
+  { type:'narration', text:'Me lleva a una cafetería. Me presta su camisa blanca. Su nombre, descubro después, es Jeremy Crawford.' },  // 9
+  { type:'narration', text:'Y resulta que él también tiene una reunión en Pantem Press. La misma reunión que yo.' },  // 10
+  { type:'choice', choices:[  // 11
+    { text:'«Es una coincidencia extraña»', effect:5,  type:'distrust', next:12 },
+    { text:'«A veces el destino actúa así»',  effect:-5, type:'trust',    next:12 },
   ]},
-  // ── CAPÍTULO 2: La propuesta ──────────────────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 2', title:'La propuesta', bg:'manhattan' },
-  { type:'narration', text:'En la reunión, la editora Corey reveló la verdad: Verity Crawford, la autora más vendida del momento, sufrió un grave accidente. Está en coma.' },
-  { type:'dialogue', speaker:'Corey', text:'Su serie está incompleta. Jeremy necesita a alguien que la termine. Alguien que entienda la voz de Verity.' },
-  { type:'dialogue', speaker:'Jeremy', text:'He leído tus libros, Lowen. Verity también los leía. Creo que eres la indicada.' },
-  { type:'thought', speaker:'Lowen', text:'«Estoy al borde de la bancarrota. Esto salvaría mi carrera. Pero tendría que ir a vivir a su mansión, con él, con su esposa inconsciente en el piso de arriba.»' },
-  { type:'choice', choices:[
-    { text:'Aceptar sin dudar — el dinero es urgente', effect: -5, type:'neutral', next: 18 },
-    { text:'Pedir tiempo para pensarlo', effect: 0, type:'neutral', next: 18 },
-    { text:'Sentir que algo no encaja en todo esto', effect: 8, type:'distrust', next: 18 },
-  ]},
-  // ── CAPÍTULO 3: La mansión ────────────────────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 3', title:'La mansión Crawford', bg:'mansion' },
-  { type:'narration', text:'Vermont. La mansión Crawford se alza entre los árboles, sólida y silenciosa como un secreto bien guardado.' },
-  { type:'narration', text:'Jeremy me recibe con su hijo Crew, un niño de pocos años que observa desde las escaleras sin decir nada.' },
-  { type:'dialogue', speaker:'Jeremy', text:'Verity está en el dormitorio principal. Los cuidadores vienen tres veces por semana. Tú tendrás el estudio.' },
-  { type:'narration', text:'Desde el pasillo, escucho un sonido. Un sonido que no debería venir de alguien en coma.' },
-  { type:'thought', speaker:'Lowen', text:'«¿Fue un gemido? ¿O solo el crujido de la casa vieja?»' },
-  { type:'choice', choices:[
-    { text:'Ignorarlo — las casas viejas hacen ruidos', effect: -8, type:'trust', next: 25 },
-    { text:'Preguntarle a Jeremy qué fue ese ruido', effect: 5, type:'distrust', next: 25 },
-    { text:'Ir a investigar sola por el pasillo', effect: 10, type:'distrust', next: 25 },
-  ]},
-  // ── CAPÍTULO 4: El manuscrito ──────────────────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 4', title:'Lo que encontré', bg:'office' },
-  { type:'narration', text:'El estudio de Verity es un caos controlado. Papeles, notas, post-its. Empiezo a buscar material para continuar la serie.' },
-  { type:'narration', text:'Detrás de una estantería, en una caja sin etiquetar, encuentro un manuscrito encuadernado a mano.' },
-  { type:'narration', text:'La primera página dice: "Para mis ojos únicamente. Si lo estás leyendo, es porque encontraste lo que nunca debiste encontrar."' },
-  { type:'choice', choices:[
-    { text:'Cerrarlo y devolverlo donde estaba', effect: -15, type:'trust', next: 28 },
-    { text:'Leer la primera página nada más', effect: 5, type:'distrust', next: 29 },
-    { text:'Leerlo todo — necesito conocer a Verity para escribir como ella', effect: 10, type:'distrust', next: 30 },
-  ]},
-  { type:'narration', text:'Lo cierras. Pero esa noche no puedes dormir. La caja sigue ahí, esperando.', next:30 },
-  { type:'narration', text:'Lees la primera página. Y no puedes parar.', next:30 },
-  { type:'ms-read', msText:'Conocí a Jeremy Crawford cuando tenía veintidós años. Era todo lo que yo no era: seguro, amado, deseado. Lo quería con una intensidad que me asustaba. No era amor lo que sentía. Era necesidad. Era hambre. Jeremy era lo único que me hacía sentir que existía.\n\nCuando quedé embarazada de las gemelas, supe que algo dentro de mí se rompería. Y se rompió.', next:31 },
 
-  // ── CAPÍTULO 5: Los secretos de Verity ───────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 5', title:'La autobiografía', bg:'manuscript' },
-  { type:'narration', text:'Sigues leyendo el manuscrito noche tras noche. Lo que describes es aterrador: una mujer que admite haber deseado la muerte de sus propias hijas.' },
-  { type:'ms-read', msText:'Chloe murió a los dos años. Se cayó por las escaleras. Jeremy lloró durante semanas. Yo también lloré — pero no por las mismas razones que él.\n\nLa noche que ocurrió, yo estaba en la parte de arriba. Lo vi todo. Y no hice nada.\n\nHarper tenía seis años cuando murió ahogada en el lago. Jeremy no estaba en casa. Yo sí.\n\nDigo "murió ahogada". Eso es lo que dice el informe policial.', next:34 },
-  { type:'thought', speaker:'Lowen', text:'«Si esto es verdad, Verity mató a sus propias hijas. Y está aquí arriba, a metros de mí, fingiendo estar en coma.»' },
-  { type:'choice', choices:[
-    { text:'Esto no puede ser verdad — nadie escribe algo así', effect: -15, type:'trust', next: 36 },
-    { text:'Puede ser ficción terapéutica — escritoras a veces imaginan lo oscuro', effect: -10, type:'trust', next: 36 },
-    { text:'La forma en que lo escribe es demasiado específica para ser inventado', effect: 15, type:'distrust', next: 36 },
-    { text:'Debo contárselo a Jeremy ahora mismo', effect: 10, type:'distrust', next: 36 },
+  // ── CAPÍTULO 2 (12-17) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 2', title:'La propuesta', bg:'manhattan' },       // 12
+  { type:'narration', text:'En la reunión, la editora Corey reveló la verdad: Verity Crawford, la autora más vendida del momento, sufrió un grave accidente. Está en coma.' },  // 13
+  { type:'dialogue',  speaker:'Corey',  text:'Su serie está incompleta. Jeremy necesita a alguien que la termine. Alguien que entienda la voz de Verity.' },  // 14
+  { type:'dialogue',  speaker:'Jeremy', text:'He leído tus libros, Lowen. Verity también los leía. Creo que eres la indicada.' },  // 15
+  { type:'thought',   speaker:'Lowen',  text:'«Estoy al borde de la bancarrota. Esto salvaría mi carrera. Pero tendría que ir a vivir a su mansión, con él, con su esposa inconsciente en el piso de arriba.»' },  // 16
+  { type:'choice', choices:[  // 17
+    { text:'Aceptar sin dudar — el dinero es urgente',     effect:-5, type:'neutral',  next:18 },
+    { text:'Pedir tiempo para pensarlo',                    effect:0,  type:'neutral',  next:18 },
+    { text:'Sentir que algo no encaja en todo esto',        effect:8,  type:'distrust', next:18 },
   ]},
-  // ── CAPÍTULO 6: Jeremy ────────────────────────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 6', title:'Lo que siento', bg:'mansion' },
-  { type:'narration', text:'Los días pasan. Jeremy y tú cenan juntos cada noche. Hablas de libros, de escritura, de la vida que él tenía antes del accidente.' },
-  { type:'dialogue', speaker:'Jeremy', text:'Verity siempre decía que las historias más oscuras vienen de los lugares más honestos de uno mismo.' },
-  { type:'thought', speaker:'Lowen', text:'«No sé si lo que siento por él es admiración o algo más. Pero sé que es peligroso.»' },
-  { type:'dialogue', speaker:'Jeremy', text:'¿Encontraste lo que necesitabas en el estudio? ¿Algo útil entre sus papeles?' },
-  { type:'choice', choices:[
-    { text:'Contarle todo sobre el manuscrito', effect: -5, type:'neutral', next: 42 },
-    { text:'«Sí, hay mucho material. La serie será magnífica.»', effect: 0, type:'neutral', next: 43 },
-    { text:'«Encontré algo... pero necesito más tiempo para entenderlo.»', effect: 5, type:'distrust', next: 44 },
-  ]},
-  { type:'narration', text:'Le cuentas todo. Jeremy se queda en silencio durante un largo momento. Luego dice: "Quémalo."', next:45 },
-  { type:'narration', text:'Mientes. Por primera vez en tu vida, la mentira te sale natural.', next:45 },
-  { type:'narration', text:'Él asiente, sin sospechar nada. Y esa noche vuelves a leer el manuscrito.', next:45 },
 
-  // ── CAPÍTULO 7: La noche que todo cambia ─────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 7', title:'Una noche en la mansión', bg:'mansion' },
-  { type:'narration', text:'Despiertas a medianoche con un sonido extraño. Como pasos. Alguien camina por el pasillo.' },
-  { type:'narration', text:'Te asomas. La puerta del dormitorio de Verity está entreabierta. Dentro, oscuridad.' },
-  { type:'narration', text:'Y entonces la ves.' },
-  { type:'narration', text:'Verity Crawford está de pie junto a la ventana. Mirando hacia afuera. Completamente inmóvil.' },
-  { type:'thought', speaker:'Lowen', text:'«Esto no es posible. Está en coma. Los médicos dijeron que—»' },
-  { type:'choice', choices:[
-    { text:'Gritar y despertar a Jeremy', effect: 15, type:'distrust', next: 52 },
-    { text:'Quedarte paralizada, sin hacer nada', effect: 0, type:'neutral', next: 53 },
-    { text:'Entrar a la habitación y enfrentarla', effect: 20, type:'distrust', next: 54 },
+  // ── CAPÍTULO 3 (18-24) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 3', title:'La mansión Crawford', bg:'mansion' },  // 18
+  { type:'narration', text:'Vermont. La mansión Crawford se alza entre los árboles, sólida y silenciosa como un secreto bien guardado.' },  // 19
+  { type:'narration', text:'Jeremy me recibe con su hijo Crew, un niño de pocos años que observa desde las escaleras sin decir nada.' },  // 20
+  { type:'dialogue',  speaker:'Jeremy', text:'Verity está en el dormitorio principal. Los cuidadores vienen tres veces por semana. Tú tendrás el estudio.' },  // 21
+  { type:'narration', text:'Desde el pasillo, escucho un sonido. Un sonido que no debería venir de alguien en coma.' },  // 22
+  { type:'thought',   speaker:'Lowen',  text:'«¿Fue un gemido? ¿O solo el crujido de la casa vieja?»' },  // 23
+  { type:'choice', choices:[  // 24
+    { text:'Ignorarlo — las casas viejas hacen ruidos',      effect:-8,  type:'trust',    next:25 },
+    { text:'Preguntarle a Jeremy qué fue ese ruido',          effect:5,   type:'distrust', next:25 },
+    { text:'Ir a investigar sola por el pasillo',             effect:10,  type:'distrust', next:25 },
   ]},
-  { type:'narration', text:'Jeremy llega corriendo. Ve a Verity de pie. Se queda sin habla. "Esto pasa a veces", dice al fin. "Los médicos lo llaman movimientos reflejos."', next:55 },
-  { type:'narration', text:'Te quedas helada. Pero no haces nada. Al día siguiente actúas como si nada hubiera pasado.', next:55 },
-  { type:'narration', text:'Verity se gira. Por un segundo, juras que te mira directamente. Luego vuelve a caer, inconsciente, sobre la cama.', next:55 },
 
-  // ── CAPÍTULO 8: La decisión ───────────────────────────────────────────────
-  { type:'chapter', chapter:'Capítulo 8', title:'La verdad que quema', bg:'revelation' },
-  { type:'narration', text:'Has terminado de leer el manuscrito. Sabes todo lo que Verity confiesa: el odio a sus hijas, las muertes que describe como accidentes, el miedo que tiene de que Jeremy descubra quién es realmente.' },
-  { type:'narration', text:'Jeremy está en el jardín con Crew. Los observas desde la ventana. Es una imagen perfecta.' },
-  { type:'thought', speaker:'Lowen', text:'«Si le muestro el manuscrito, destruiré lo que queda de su vida. Si lo quemo, protejo a un hombre que puede ser feliz. Pero si Verity no está en coma de verdad...»' },
-  { type:'narration', text:'Tienes el manuscrito en las manos. El encendedor que encontraste en el cajón brilla bajo la luz.' },
-  { type:'choice', choices:[
-    { text:'Quemarlo — lo que no se sabe no puede hacer daño', effect: -20, type:'trust', next: 59 },
-    { text:'Dárselo a Jeremy — merece saber la verdad', effect: 20, type:'distrust', next: 60 },
-    { text:'Guardarlo — puede que algún día lo necesites como prueba', effect: 10, type:'distrust', next: 61 },
+  // ── CAPÍTULO 4 (25-32) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 4', title:'Lo que encontré', bg:'office' },       // 25
+  { type:'narration', text:'El estudio de Verity es un caos controlado. Papeles, notas, post-its. Empiezo a buscar material para continuar la serie.' },  // 26
+  { type:'narration', text:'Detrás de una estantería, en una caja sin etiquetar, encuentro un manuscrito encuadernado a mano.' },  // 27
+  { type:'narration', text:'La primera página dice: "Para mis ojos únicamente. Si lo estás leyendo, es porque encontraste lo que nunca debiste encontrar."' },  // 28
+  { type:'choice', choices:[  // 29
+    { text:'Cerrarlo y devolverlo donde estaba',                              effect:-15, type:'trust',    next:30 },
+    { text:'Leer la primera página nada más',                                  effect:5,  type:'distrust', next:31 },
+    { text:'Leerlo todo — necesito conocer a Verity para escribir como ella',  effect:10, type:'distrust', next:32 },
   ]},
-  { type:'narration', text:'Las llamas consumen las páginas una a una. La autobiografía de Verity se convierte en cenizas. La verdad desaparece.', next:62 },
-  { type:'narration', text:'Jeremy lee el manuscrito en silencio. Cuando termina, tiene los ojos rojos. "¿Crees que es verdad?" te pregunta.', next:62 },
-  { type:'narration', text:'Lo guardas en la maleta. No sabes cuándo lo usarás. Pero ahora tienes el poder.', next:62 },
+  { type:'narration', text:'Lo cierras. Pero esa noche no puedes dormir pensando en él. La caja sigue ahí, esperando.', next:32 },  // 30
+  { type:'narration', text:'Lees la primera página. Y no puedes parar.',                                                  next:32 },  // 31
+  { type:'ms-read', msText:'Conocí a Jeremy Crawford cuando tenía veintidós años. Era todo lo que yo no era: seguro, amado, deseado. Lo quería con una intensidad que me asustaba. No era amor lo que sentía. Era necesidad. Era hambre. Jeremy era lo único que me hacía sentir que existía.\n\nCuando quedé embarazada de las gemelas, supe que algo dentro de mí se rompería. Y se rompió.', next:33 },  // 32
 
-  // ── CAPÍTULO FINAL ─────────────────────────────────────────────────────────
-  { type:'chapter', chapter:'Epílogo', title:'Lo que queda', bg:'revelation' },
-  { type:'narration', text:'Tres días después, Verity Crawford muere. El informe oficial dice: insuficiencia respiratoria, complicación del coma.' },
-  { type:'narration', text:'Jeremy llora. Crew no entiende qué significa que mamá ya no esté.' },
-  { type:'thought', speaker:'Lowen', text:'«Y yo me pregunto si alguien más sabía. Si el final de la historia de Verity fue escrito antes de que yo llegara.»' },
-  { type:'narration', text:'Meses después, Jeremy te envía una carta. Adjunta hay una nota escrita a mano que no reconoces.' },
-  { type:'narration', text:'La letra es de Verity.' },
-  { type:'narration', text:'Y en ella dice: "Sé lo que encontraste. Sé lo que hiciste. La pregunta no es si soy un monstruo. La pregunta es: ¿lo eres tú?"' },
-  { type:'end' },
+  // ── CAPÍTULO 5 (33-37) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 5', title:'La autobiografía', bg:'manuscript' },  // 33
+  { type:'narration', text:'Sigues leyendo el manuscrito noche tras noche. Lo que confiesa es aterrador: una mujer que admite haber deseado la muerte de sus propias hijas.' },  // 34
+  { type:'ms-read', msText:'Chloe murió a los dos años. Se cayó por las escaleras. Jeremy lloró durante semanas. Yo también lloré — pero no por las mismas razones que él.\n\nLa noche que ocurrió, yo estaba en la parte de arriba. Lo vi todo. Y no hice nada.\n\nHarper tenía seis años cuando murió ahogada en el lago. Jeremy no estaba en casa. Yo sí.\n\nDigo "murió ahogada". Eso es lo que dice el informe policial.', next:36 },  // 35
+  { type:'thought',   speaker:'Lowen', text:'«Si esto es verdad, Verity mató a sus propias hijas. Y está aquí arriba, a metros de mí, fingiendo estar en coma.»' },  // 36
+  { type:'choice', choices:[  // 37
+    { text:'Esto no puede ser verdad — nadie escribe algo así',               effect:-15, type:'trust',    next:38 },
+    { text:'Puede ser ficción terapéutica — escritoras imaginan lo oscuro',    effect:-10, type:'trust',    next:38 },
+    { text:'Los detalles son demasiado específicos para ser inventados',        effect:15,  type:'distrust', next:38 },
+    { text:'Debo contárselo a Jeremy ahora mismo',                             effect:10,  type:'distrust', next:38 },
+  ]},
+
+  // ── CAPÍTULO 6 (38-46) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 6', title:'Lo que siento', bg:'mansion' },        // 38
+  { type:'narration', text:'Los días pasan. Jeremy y tú cenan juntos cada noche. Hablas de libros, de escritura, de la vida que él tenía antes del accidente.' },  // 39
+  { type:'dialogue',  speaker:'Jeremy', text:'Verity siempre decía que las historias más oscuras vienen de los lugares más honestos de uno mismo.' },  // 40
+  { type:'thought',   speaker:'Lowen',  text:'«No sé si lo que siento por él es admiración o algo más. Pero sé que es peligroso.»' },  // 41
+  { type:'dialogue',  speaker:'Jeremy', text:'¿Encontraste lo que necesitabas en el estudio? ¿Algo útil entre sus papeles?' },  // 42
+  { type:'choice', choices:[  // 43
+    { text:'Contarle todo sobre el manuscrito',                                effect:-5, type:'neutral',  next:44 },
+    { text:'«Sí, hay mucho material. La serie será magnífica.»',               effect:0,  type:'neutral',  next:45 },
+    { text:'«Encontré algo... pero necesito más tiempo para entenderlo.»',      effect:5,  type:'distrust', next:46 },
+  ]},
+  { type:'narration', text:'Le cuentas todo. Jeremy se queda en silencio durante un largo momento. Luego dice: "Quémalo."', next:47 },  // 44
+  { type:'narration', text:'Mientes. Por primera vez en tu vida, la mentira te sale completamente natural.',               next:47 },  // 45
+  { type:'narration', text:'Él asiente, sin sospechar nada. Y esa noche vuelves a leer el manuscrito.',                    next:47 },  // 46
+
+  // ── CAPÍTULO 7 (47-56) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 7', title:'Una noche en la mansión', bg:'mansion' },  // 47
+  { type:'narration', text:'Despiertas a medianoche con un sonido extraño. Como pasos. Alguien camina por el pasillo.' },  // 48
+  { type:'narration', text:'Te asomas. La puerta del dormitorio de Verity está entreabierta. Dentro, oscuridad.' },  // 49
+  { type:'narration', text:'Y entonces la ves.' },  // 50
+  { type:'narration', text:'Verity Crawford está de pie junto a la ventana. Mirando hacia afuera. Completamente inmóvil.' },  // 51
+  { type:'thought',   speaker:'Lowen', text:'«Esto no es posible. Está en coma. Los médicos dijeron que—»' },  // 52
+  { type:'choice', choices:[  // 53
+    { text:'Gritar y despertar a Jeremy',                       effect:15, type:'distrust', next:54 },
+    { text:'Quedarte paralizada, sin hacer nada',               effect:0,  type:'neutral',  next:55 },
+    { text:'Entrar a la habitación y enfrentarla',              effect:20, type:'distrust', next:56 },
+  ]},
+  { type:'narration', text:'Jeremy llega corriendo. Ve a Verity de pie. Se queda sin habla. "Esto pasa a veces", dice al fin. "Los médicos lo llaman movimientos reflejos."', next:57 },  // 54
+  { type:'narration', text:'Te quedas helada. Pero no haces nada. Al día siguiente actúas como si nunca hubiera pasado.',                                                       next:57 },  // 55
+  { type:'narration', text:'Verity se gira. Por un segundo, juras que te mira directamente. Luego vuelve a caer, inconsciente, sobre la cama.',                               next:57 },  // 56
+
+  // ── CAPÍTULO 8 (57-65) ─────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Capítulo 8', title:'La verdad que quema', bg:'revelation' },  // 57
+  { type:'narration', text:'Has terminado de leer el manuscrito. Sabes todo lo que Verity confiesa: el odio a sus hijas, las muertes que describe como accidentes, el miedo de que Jeremy descubra quién es realmente.' },  // 58
+  { type:'narration', text:'Jeremy está en el jardín con Crew. Los observas desde la ventana. Es una imagen perfecta.' },  // 59
+  { type:'thought',   speaker:'Lowen', text:'«Si le muestro el manuscrito, destruiré lo que queda de su vida. Si lo quemo, protejo a un hombre que puede ser feliz. Pero si Verity no está en coma de verdad...»' },  // 60
+  { type:'narration', text:'Tienes el manuscrito en las manos. El encendedor que encontraste en el cajón brilla bajo la luz.' },  // 61
+  { type:'choice', choices:[  // 62
+    { text:'Quemarlo — lo que no se sabe no puede hacer daño', effect:-20, type:'trust',    next:63 },
+    { text:'Dárselo a Jeremy — merece saber la verdad',         effect:20,  type:'distrust', next:64 },
+    { text:'Guardarlo — algún día lo necesitarás como prueba',  effect:10,  type:'distrust', next:65 },
+  ]},
+  { type:'narration', text:'Las llamas consumen las páginas una a una. La autobiografía de Verity se convierte en cenizas. La verdad desaparece.', next:66 },  // 63
+  { type:'narration', text:'Jeremy lee el manuscrito en silencio. Cuando termina, tiene los ojos rojos. "¿Crees que es verdad?" te pregunta.',      next:66 },  // 64
+  { type:'narration', text:'Lo guardas en la maleta. No sabes cuándo lo usarás. Pero ahora tienes el poder.',                                       next:66 },  // 65
+
+  // ── EPÍLOGO (66-73) ────────────────────────────────────────────────────────
+  { type:'chapter', chapter:'Epílogo', title:'Lo que queda', bg:'revelation' },          // 66
+  { type:'narration', text:'Tres días después, Verity Crawford muere. El informe oficial dice: insuficiencia respiratoria, complicación del coma.' },  // 67
+  { type:'narration', text:'Jeremy llora. Crew no entiende qué significa que mamá ya no esté.' },  // 68
+  { type:'thought',   speaker:'Lowen', text:'«Y yo me pregunto si alguien más sabía. Si el final de la historia de Verity fue escrito antes de que yo llegara.»' },  // 69
+  { type:'narration', text:'Meses después, Jeremy te envía una carta. Adjunta hay una nota escrita a mano que no reconoces.' },  // 70
+  { type:'narration', text:'La letra es de Verity.' },  // 71
+  { type:'narration', text:'Y en ella dice: "Sé lo que encontraste. Sé lo que hiciste. La pregunta no es si soy un monstruo. La pregunta es: ¿lo eres tú?"' },  // 72
+  { type:'end' },  // 73
 ];
 
 // ── Engine ─────────────────────────────────────────────────────────────────────
