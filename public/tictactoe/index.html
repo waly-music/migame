@@ -195,7 +195,11 @@ const sfx={
 };
 
 // ── WebRTC voice ──────────────────────────────────────────────────────────────
-let localStream=null, pc=null, remAudio=null, micOn=false, isInit=false;
+// socket MUST be declared first so all socket.on() calls below can reference it
+const socket = io('/tictactoe');
+let mySym=null, myTurn=false, isInit=false;
+
+let localStream=null, pc=null, remAudio=null, micOn=false;
 const ICE={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
 
 function vad(stream, dotId){
@@ -281,9 +285,6 @@ socket.on('rtc-ice', async({candidate})=>{
 });
 
 // ── Socket & game ─────────────────────────────────────────────────────────────
-const socket=io('/tictactoe');
-let mySym=null,myTurn=false;
-
 socket.on('connect', ()=>{ console.log('connected to /tictactoe'); });
 socket.on('connect_error', (e)=>{ console.error('socket error',e); document.getElementById('statusMsg').textContent='Error de conexión'; });
 
