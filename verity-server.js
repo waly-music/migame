@@ -136,6 +136,40 @@ module.exports = function setupVerity(io) {
       if (room.state === 'lobby') broadcastLobby(room);
       else verityIo.to(myRoomId).emit('playerLeft', { name: room.players[socket.id]?.name });
     });
+
+    // ── WebRTC mesh signaling ─────────────────────────────────────────────────
+    // When a new player joins with mic, they get the list of existing peers
+    // and create an offer to each one (mesh topology)
+    socket.on('rtc-get-peers', () => {
+      if (!myRoomId || !rooms[myRoomId]) return;
+      const peers = Object.keys(rooms[myRoomId].players).filter(id => id !== socket.id);
+      socket.emit('rtc-peers', { peers });
+    });
+
+    // Forward offer to a specific peer
+    socket.on('rtc-offer', ({ offer, to }) => {
+      verityIo.to(to).emit('rtc-offer', { offer, from: socket.id });
+    });
+
+    // Forward answer to a specific peer
+    socket.on('rtc-answer', ({ answer, to }) => {
+      verityIo.to(to).emit('rtc-answer', { answer, from: socket.id });
+    });
+
+    // Forward ICE candidate to a specific peer
+    socket.on('rtc-ice', ({ candidate, to }) => {
+      verityIo.to(to).emit('rtc-ice', { candidate, from: socket.id });
+    });
+
+    // Notify others when someone activates mic
+    socket.on('rtc-mic-on', () => {
+      if (!myRoomId) return;
+      verityIo.to(myRoomId).emit('rtc-peer-mic-on', { peerId: socket.id });
+    });
+    socket.on('rtc-mic-off', () => {
+      if (!myRoomId) return;
+      verityIo.to(myRoomId).emit('rtc-peer-mic-off', { peerId: socket.id });
+    });
   });
 
   function startRound(room) {

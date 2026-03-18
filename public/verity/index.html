@@ -107,7 +107,19 @@ input::placeholder,textarea::placeholder{color:var(--hint)}
 .dot-anim:nth-child(2){animation-delay:.2s}.dot-anim:nth-child(3){animation-delay:.4s}
 @keyframes dotPulse{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.3);opacity:1}}
 
-/* ── Util ── */
+/* ── Voice bar ── */
+.voice-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;margin-bottom:16px}
+.mic-btn{background:rgba(201,160,184,.1);border:1px solid rgba(201,160,184,.3);border-radius:8px;padding:7px 14px;color:var(--accent);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.mic-btn:hover{background:rgba(201,160,184,.2)}
+.mic-btn.active{background:var(--accent);color:#0a0608;animation:micGlow 1.6s ease-in-out infinite}
+@keyframes micGlow{0%,100%{box-shadow:0 0 0 0 rgba(201,160,184,.4)}50%{box-shadow:0 0 0 7px rgba(201,160,184,0)}}
+.voice-status{font-size:11px;color:var(--hint)}
+.voice-peers{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:flex-end}
+.vpeer{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);padding:3px 8px;background:rgba(255,255,255,.04);border-radius:20px;transition:all .2s}
+.vpeer.speaking{background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.25)}
+.vpeer .vdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15);flex-shrink:0}
+.vpeer.speaking .vdot{background:#4ade80;animation:vWave .5s ease-in-out infinite alternate}
+@keyframes vWave{from{transform:scale(1)}to{transform:scale(1.6)}}
 .hidden{display:none!important}
 .flex-gap{display:flex;gap:10px}
 .mt8{margin-top:8px}
@@ -119,7 +131,14 @@ input::placeholder,textarea::placeholder{color:var(--hint)}
 <div class="wrap">
   <a class="back" href="/">← Menú principal</a>
 
-  <!-- ── LOBBY ── -->
+  <!-- ── VOICE BAR ── -->
+  <div class="voice-bar" id="voiceBar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️ Voz</button>
+      <span class="voice-status" id="voiceStatus">Desactivado</span>
+    </div>
+    <div class="voice-peers" id="voicePeers"></div>
+  </div>
   <div id="screen-lobby">
     <div class="header">
       <div class="logo">V<span>E</span>RITY</div>
@@ -432,6 +451,179 @@ socket.on('gameOver', ({ scores }) => {
 
 // ── Socket ID ─────────────────────────────────────────────────────────────────
 socket.on('connect', () => { myId = socket.id; });
+
+// ════════════════════════════════════════════════════════════════════════════
+// VOICE CHAT — WebRTC mesh (cada jugador conecta con todos los demás)
+// ════════════════════════════════════════════════════════════════════════════
+const ICE_CFG = { iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] };
+let localStream = null;
+let micActive   = false;
+const peers     = {};   // peerId → RTCPeerConnection
+const peerNames = {};   // peerId → name
+
+async function toggleMic() {
+  micActive ? stopMic() : await startMic();
+}
+
+async function startMic() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+    micActive = true;
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('micBtn').textContent = '🔴 Voz activa';
+    document.getElementById('voiceStatus').textContent = 'Conectando…';
+    startVAD(localStream, myId);
+    socket.emit('rtc-mic-on');
+    // Ask server for list of connected peers and create offer to each
+    socket.emit('rtc-get-peers');
+  } catch(e) {
+    document.getElementById('voiceStatus').textContent = 'Sin permiso de micrófono';
+  }
+}
+
+function stopMic() {
+  micActive = false;
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  Object.values(peers).forEach(pc => pc.close());
+  Object.keys(peers).forEach(id => delete peers[id]);
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('micBtn').textContent = '🎙️ Voz';
+  document.getElementById('voiceStatus').textContent = 'Desactivado';
+  socket.emit('rtc-mic-off');
+  renderVoicePeers();
+}
+
+// Server sends list of peers we need to call
+socket.on('rtc-peers', async ({ peers: peerList }) => {
+  for (const peerId of peerList) {
+    await createOffer(peerId);
+  }
+  const n = peerList.length;
+  document.getElementById('voiceStatus').textContent =
+    n === 0 ? 'Esperando que otros activen voz…' : `Conectando con ${n} jugador(es)…`;
+});
+
+// Someone else sent us an offer
+socket.on('rtc-offer', async ({ offer, from }) => {
+  if (!micActive) {
+    // Accept connection even if mic is off — they can hear us when we activate
+    // For now just ignore if we have no stream
+    return;
+  }
+  const pc = getOrCreatePeer(from);
+  await pc.setRemoteDescription(new RTCSessionDescription(offer));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  socket.emit('rtc-answer', { answer, to: from });
+});
+
+socket.on('rtc-answer', async ({ answer, from }) => {
+  const pc = peers[from];
+  if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+socket.on('rtc-ice', async ({ candidate, from }) => {
+  const pc = peers[from];
+  try { if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
+});
+
+// Someone activated their mic — show them in UI and they'll send an offer
+socket.on('rtc-peer-mic-on', ({ peerId }) => {
+  renderVoicePeers();
+});
+socket.on('rtc-peer-mic-off', ({ peerId }) => {
+  if (peers[peerId]) { peers[peerId].close(); delete peers[peerId]; }
+  renderVoicePeers();
+});
+
+async function createOffer(peerId) {
+  const pc = getOrCreatePeer(peerId);
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  socket.emit('rtc-offer', { offer, to: peerId });
+}
+
+function getOrCreatePeer(peerId) {
+  if (peers[peerId]) return peers[peerId];
+  const pc = new RTCPeerConnection(ICE_CFG);
+  peers[peerId] = pc;
+
+  // Add local tracks
+  if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  // Receive remote audio
+  pc.ontrack = e => {
+    let audio = document.getElementById('audio-' + peerId);
+    if (!audio) {
+      audio = document.createElement('audio');
+      audio.id = 'audio-' + peerId;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    }
+    audio.srcObject = e.streams[0];
+    startVAD(e.streams[0], peerId);
+    document.getElementById('voiceStatus').textContent = '🟢 Voz conectada';
+    renderVoicePeers();
+  };
+
+  pc.onicecandidate = e => {
+    if (e.candidate) socket.emit('rtc-ice', { candidate: e.candidate, to: peerId });
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (['disconnected','failed','closed'].includes(pc.connectionState)) {
+      delete peers[peerId];
+      const audio = document.getElementById('audio-' + peerId);
+      if (audio) audio.remove();
+      renderVoicePeers();
+    }
+  };
+
+  return pc;
+}
+
+// Voice Activity Detection
+const vadIntervals = {};
+function startVAD(stream, id) {
+  try {
+    if (vadIntervals[id]) clearInterval(vadIntervals[id]);
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const an  = ctx.createAnalyser(); an.fftSize = 512;
+    src.connect(an);
+    const buf = new Uint8Array(an.fftSize);
+    vadIntervals[id] = setInterval(() => {
+      an.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) sum += Math.abs(buf[i] - 128);
+      const speaking = sum / buf.length > 3;
+      const el = document.getElementById('vpeer-' + id);
+      if (el) el.classList.toggle('speaking', speaking);
+    }, 80);
+  } catch(e) {}
+}
+
+function renderVoicePeers() {
+  const container = document.getElementById('voicePeers');
+  if (!container) return;
+  const activePeerIds = Object.keys(peers);
+  if (!micActive && activePeerIds.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  // Show self + all peers
+  const all = micActive ? [myId, ...activePeerIds] : activePeerIds;
+  container.innerHTML = all.map(id => {
+    const name = id === myId ? 'Yo' : (peerNames[id] || id.slice(0,6));
+    return `<div class="vpeer" id="vpeer-${id}"><div class="vdot"></div>${name}</div>`;
+  }).join('');
+}
+
+// Track player names from lobby data
+socket.on('lobby', ({ players }) => {
+  players.forEach(p => { peerNames[p.id] = p.name; });
+  renderVoicePeers();
+});
 </script>
 </body>
 </html>
