@@ -166,7 +166,10 @@ module.exports = function setupTicTacToe(io) {
       if (roomId) {
         const room=rooms[roomId];
         if (room&&!room.done) tttIo.to(roomId).emit('opponentLeft');
-        delete rooms[roomId]; delete socketRoom[socket.id];
+        // FIX: clean socketRoom for both players
+        if (room) Object.values(room.players).forEach(id => delete socketRoom[id]);
+        else delete socketRoom[socket.id];
+        delete rooms[roomId];
       }
     });
   });
